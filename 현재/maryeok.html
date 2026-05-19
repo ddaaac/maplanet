@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>메이플 플래닛</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", sans-serif;
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900 min-h-screen">
+    <!-- Top header bar -->
+    <header class="bg-white border-b border-slate-200">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-orange-500 text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+              <path d="M12 2l2.39 7.36H22l-6.18 4.49L18.21 22 12 17.27 5.79 22l2.39-8.15L2 9.36h7.61L12 2z"/>
+            </svg>
+          </span>
+          <h1 class="text-lg sm:text-xl font-bold">메이플 플래닛</h1>
+        </div>
+      </div>
+      <!-- Nav -->
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <nav class="flex gap-6 text-sm">
+          <button type="button" data-tab="stat"
+            class="tab-btn relative py-3 font-semibold text-slate-900">
+            스탯 입력
+            <span class="tab-underline absolute left-0 right-0 bottom-0 h-0.5 bg-orange-500"></span>
+          </button>
+          <button type="button" data-tab="dmg"
+            class="tab-btn relative py-3 font-medium text-slate-500 hover:text-slate-900">
+            데미지 계산
+            <span class="tab-underline absolute left-0 right-0 bottom-0 h-0.5 bg-orange-500 hidden"></span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto p-4 sm:p-6">
+
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+        <main class="space-y-3">
+          <!-- 탭: 스탯 입력 -->
+          <div data-tabpanel="stat" class="space-y-3">
+          <!-- Sub-tabs: 간단 / 부위별 -->
+          <nav class="flex gap-1 text-xs border-b border-slate-200">
+            <button type="button" data-subtab="simple"
+              class="subtab-btn px-3 py-2 font-semibold text-slate-900 border-b-2 border-orange-500 -mb-px">간단</button>
+            <button type="button" data-subtab="detail"
+              class="subtab-btn px-3 py-2 font-medium text-slate-500 hover:text-slate-900 border-b-2 border-transparent -mb-px">부위별</button>
+          </nav>
+
+          <!-- 간단 모드 -->
+          <div data-subpanel="simple" class="space-y-3">
+            <section class="bg-white rounded-lg border border-slate-200 p-3">
+              <h2 class="font-semibold text-sm mb-2">인게임 스탯창 그대로 입력</h2>
+              <p class="text-xs text-slate-500 mb-2">캐릭터 스탯창에 보이는 숫자 그대로 적어줘.</p>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <label class="text-xs">
+                  <span class="text-slate-600">INT</span>
+                  <input type="number" id="simple-int" value="1583"
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+                </label>
+                <label class="text-xs">
+                  <span class="text-slate-600">LUK</span>
+                  <input type="number" id="simple-luk" value="100"
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+                </label>
+                <label class="text-xs">
+                  <span class="text-slate-600">마력</span>
+                  <input type="number" id="simple-mag" value="1963"
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+                </label>
+                <label class="text-xs">
+                  <span class="text-slate-600">무기 총뎀%</span>
+                  <input type="number" id="simple-totaldmg" value="0"
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+                </label>
+              </div>
+            </section>
+          </div>
+
+          <!-- 부위별 모드 -->
+          <div data-subpanel="detail" class="space-y-3 hidden">
+          <!-- 직업/레벨 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-sm mb-2">직업 / 레벨</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <label class="text-xs">
+                <span class="text-slate-600">직업</span>
+                <select id="job-select"
+                  class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm">
+                  <option value="mage" data-primary="int">마법사</option>
+                </select>
+              </label>
+              <label class="text-xs">
+                <span class="text-slate-600">레벨</span>
+                <input type="number" id="char-level" value="135" min="1" max="200"
+                  class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+              </label>
+              <div class="text-xs sm:col-span-2 flex items-end gap-2">
+                <button type="button" id="auto-fill-base"
+                  class="px-3 py-1.5 rounded bg-slate-700 text-white text-xs hover:bg-slate-800">
+                  기본 스탯 자동 채우기
+                </button>
+                <span class="text-slate-400 text-[11px] leading-tight">
+                  추천 = 13 + 5×(L-1) + 3차(+5) + 4차(+5) 주스탯 all-in<br>
+                  (부스탯은 4 기본. 장비 요구치 만큼 직접 추가)
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <!-- 기본 INT/LUK -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-sm mb-2">기본 스탯 (인게임 스탯창의 "주스탯 (X+Y)" 의 X)</h2>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="text-xs">
+                <span class="text-slate-600">기본 INT</span>
+                <input type="number" data-base="int" placeholder="예: 678"
+                  class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+              </label>
+              <label class="text-xs">
+                <span class="text-slate-600">기본 LUK</span>
+                <input type="number" data-base="luk" placeholder="예: 19"
+                  class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+              </label>
+            </div>
+          </section>
+
+          <!-- 부위별 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-sm mb-2">부위별</h2>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="text-slate-500 border-b border-slate-200">
+                    <th class="text-left py-1 pr-2 w-14">부위</th>
+                    <th class="py-1 px-0.5">깡 INT</th>
+                    <th class="py-1 px-0.5">INT %</th>
+                    <th class="py-1 px-0.5">깡 LUK</th>
+                    <th class="py-1 px-0.5">LUK %</th>
+                    <th class="py-1 px-0.5">깡 마력</th>
+                    <th class="py-1 px-0.5">마력 %</th>
+                    <th class="py-1 px-0.5">총뎀 %</th>
+                  </tr>
+                </thead>
+                <tbody id="parts-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- 합산 보기 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-sm mb-2">풀 합산 (auto)</h2>
+            <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
+              <div><div class="text-slate-500">Σ 깡INT</div><div id="sum-int" class="font-mono font-semibold">0</div></div>
+              <div><div class="text-slate-500">Σ INT%</div><div id="sum-intp" class="font-mono font-semibold">0%</div></div>
+              <div><div class="text-slate-500">Σ 깡LUK</div><div id="sum-luk" class="font-mono font-semibold">0</div></div>
+              <div><div class="text-slate-500">Σ LUK%</div><div id="sum-lukp" class="font-mono font-semibold">0%</div></div>
+              <div><div class="text-slate-500">Σ 깡마력</div><div id="sum-atk" class="font-mono font-semibold">0</div></div>
+              <div><div class="text-slate-500">Σ 마력%</div><div id="sum-atkp" class="font-mono font-semibold">0%</div></div>
+            </div>
+          </section>
+
+          <!-- 검증 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-sm mb-2">인게임 스탯창 (검증용)</h2>
+            <div class="grid grid-cols-3 gap-2">
+              <label class="text-xs">
+                <span class="text-slate-600">인게임 INT</span>
+                <input type="number" data-target="int" placeholder="예: 1583"
+                  class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+              </label>
+              <label class="text-xs">
+                <span class="text-slate-600">인게임 LUK</span>
+                <input type="number" data-target="luk" placeholder="예: 100"
+                  class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+              </label>
+              <label class="text-xs">
+                <span class="text-slate-600">인게임 마력</span>
+                <input type="number" data-target="atk" placeholder="예: 1963"
+                  class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+              </label>
+            </div>
+          </section>
+          </div><!-- /subpanel:detail -->
+          </div><!-- /tabpanel:stat -->
+
+          <!-- 탭: 데미지 계산 -->
+          <div data-tabpanel="dmg" class="space-y-3 hidden">
+          <!-- 데미지 계산기 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-sm mb-2 flex items-center gap-1.5">
+              데미지 계산기 (마법사)
+              <span class="relative group inline-block">
+                <button type="button" tabindex="0"
+                  class="w-4 h-4 inline-flex items-center justify-center rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold leading-none cursor-help"
+                  aria-label="공식 보기">i</button>
+                <span class="absolute left-0 top-full mt-1 z-20 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[11px] leading-relaxed rounded p-2 w-80 shadow-lg whitespace-normal font-normal">
+                  <strong>데미지 공식:</strong><br>
+                  <code class="text-orange-300">DMG = ((마력²/1000 + 마력×0.9×F)/30 + INT/200) × 스킬데미지 × 원소 × (1+총뎀%/100) × amp</code><br>
+                  F = MAX 식 = 1.0, MIN 식 = 숙련도 (블자20 = 0.6). 변동폭 ~13%.<br>
+                  <strong>안정 1킬</strong> = MIN ≥ HP (항상 1킬)
+                </span>
+              </span>
+            </h2>
+            <div class="space-y-2">
+              <!-- 1행: 사냥터 / 몬스터 / HP / 원소상성 -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <label class="text-xs">
+                  <span class="text-slate-600">사냥터</span>
+                  <select id="dmg-map" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm"></select>
+                </label>
+                <label class="text-xs">
+                  <span class="text-slate-600">몬스터</span>
+                  <select id="dmg-mob" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm"></select>
+                </label>
+                <label class="text-xs">
+                  <span class="text-slate-600">몬스터 HP</span>
+                  <input type="number" id="dmg-hp" value="133000"
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+                </label>
+                <label class="text-xs">
+                  <span class="text-slate-600">원소상성</span>
+                  <select id="dmg-elem"
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm">
+                    <option value="1.5">약점 (×1.5)</option>
+                    <option value="1.25">약점 (×1.25)</option>
+                    <option value="1.0" selected>보통 (×1.0)</option>
+                    <option value="0.5">내성 (×0.5)</option>
+                    <option value="0">무효 (×0)</option>
+                  </select>
+                </label>
+              </div>
+              <!-- 2행: 스킬 / 레벨 / 스킬데미지 / 숙련도 -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <label class="text-xs">
+                  <span class="text-slate-600">스킬</span>
+                  <select id="dmg-skill-name"
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm">
+                    <option value="magic-claw">매직클로 (2타)</option>
+                    <option value="thunder-bolt">썬더볼트</option>
+                    <option value="ice-strike">아이스스트라이크</option>
+                    <option value="chain-lightning">체인라이트닝</option>
+                    <option value="blizzard" selected>블리자드</option>
+                    <option value="big-bang">빅뱅</option>
+                  </select>
+                </label>
+                <label class="text-xs">
+                  <span class="text-slate-600">스킬 레벨 <span id="dmg-skill-max" class="text-slate-400">(max 30)</span></span>
+                  <input type="number" id="dmg-skill-level" value="20" min="1" max="30"
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+                </label>
+                <label class="text-xs">
+                  <span class="text-slate-600">스킬 데미지</span>
+                  <input type="number" id="dmg-skill" value="520"
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+                </label>
+                <label class="text-xs">
+                  <span class="text-slate-600">숙련도 %</span>
+                  <input type="number" id="dmg-mastery" value="60"
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm" />
+                </label>
+              </div>
+              <!-- 3행: 앰플 -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <label class="text-xs">
+                  <span class="text-slate-600">앰플 레벨</span>
+                  <select id="dmg-amp"
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm">
+                    <!-- filled by JS -->
+                  </select>
+                </label>
+                <label class="text-xs">
+                  <span class="text-slate-600">마력 (auto)</span>
+                  <input type="number" id="dmg-mag" readonly
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-200 bg-slate-50 rounded text-sm" />
+                </label>
+                <label class="text-xs">
+                  <span class="text-slate-600">무기 총뎀% (auto)</span>
+                  <input type="number" id="dmg-totaldmg" readonly
+                    class="w-full mt-1 px-2 py-1.5 border border-slate-200 bg-slate-50 rounded text-sm" />
+                </label>
+                <input type="hidden" id="dmg-int" />
+              </div>
+            </div>
+            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- 현재 데미지 -->
+              <div class="bg-slate-50 rounded p-3">
+                <div class="text-xs font-semibold text-slate-700 mb-1">현재 데미지</div>
+                <div class="text-lg font-mono font-bold" id="dmg-result-range">- ~ -</div>
+                <div class="text-xs mt-1" id="dmg-result-kill">1킬: -</div>
+              </div>
+              <!-- 안정 1킬 필요 마력 -->
+              <div class="bg-slate-50 rounded p-3">
+                <div class="text-xs font-semibold text-slate-700 mb-1">안정 1킬 필요 마력</div>
+                <div class="text-lg font-mono font-bold" id="dmg-result-need">-</div>
+                <div class="text-xs mt-1 text-slate-500" id="dmg-result-diff">vs 현재 -</div>
+              </div>
+            </div>
+          </section>
+
+          </div><!-- /tabpanel:dmg -->
+        </main>
+
+        <aside class="space-y-3">
+          <section class="bg-white rounded-lg border border-slate-200 p-4 sticky top-4">
+            <h2 class="font-semibold text-sm mb-3">계산 결과</h2>
+            <div class="space-y-1.5 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-600">총 INT</span>
+                <span class="font-mono font-semibold">
+                  <span id="total-int">0</span>
+                  <span id="diff-int" class="text-xs ml-1"></span>
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">총 LUK</span>
+                <span class="font-mono font-semibold">
+                  <span id="total-luk">0</span>
+                  <span id="diff-luk" class="text-xs ml-1"></span>
+                </span>
+              </div>
+              <div id="debug-breakdown">
+                <hr class="border-slate-200 my-1.5"/>
+                <div class="text-xs text-slate-500 space-y-0.5">
+                  <div class="flex justify-between"><span>(기본+깡INT)</span><span id="d-baseint" class="font-mono">0</span></div>
+                  <div class="flex justify-between"><span>× (1+INT%)</span><span id="d-intmult" class="font-mono">×1.00</span></div>
+                  <div class="flex justify-between"><span>= 총INT</span><span id="d-totalint" class="font-mono">0</span></div>
+                  <div class="flex justify-between mt-1"><span>(총INT+Σ깡마력)</span><span id="d-magbase" class="font-mono">0</span></div>
+                  <div class="flex justify-between"><span>× (1+마력%)</span><span id="d-magmult" class="font-mono">×1.00</span></div>
+                </div>
+              </div>
+              <hr class="border-slate-200 my-1.5"/>
+              <div class="flex justify-between items-baseline">
+                <span class="text-slate-700 font-semibold">최종 마력</span>
+                <span class="font-mono">
+                  <span id="final-magic" class="text-2xl font-bold text-orange-600">0</span>
+                  <span id="diff-atk" class="text-xs ml-1"></span>
+                </span>
+              </div>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-200">
+              <button type="button" id="reset-btn"
+                class="w-full text-xs text-slate-500 hover:text-slate-700 py-1">전체 초기화</button>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      // [부위, 깡INT, INT%, 깡LUK, LUK%, 깡마력, 마력%, 총뎀%]
+      // 무기를 맨 위로
+      const PARTS = [
+        ["무기",    4,  "",  "", "", 124, 15,  0],
+        ["머리",   11,  15, "",  "",  "",  "",  ""],
+        ["옷",      3,  18,  8,  3,  "",  "",  ""],
+        ["신발",    4,   6,  1, "",  "",  "",  ""],
+        ["귀고리", "",  18, 10,  6,  "",  "",  ""],
+        ["망토",   "",  18,  6,  6,  "",  "",  ""],
+        ["장갑",   14,  15,  2, "",  "",  "",  ""],
+        ["방패",    9,   4, 12,  1,  "",  "",  ""],
+        ["목걸이", 22,  18, 22,  6,  "",  "",  ""],
+        ["훈장",    2,  "",  2, "",  "",  "",  ""],
+      ];
+      const FIELDS = ["int", "intp", "luk", "lukp", "atk", "atkp", "totaldmg"];
+      const MAG_FIELDS = new Set(['atk', 'atkp', 'totaldmg']); // 무기만 입력 가능
+      const PRESET_BASE = { int: 678, luk: 19 };
+      const PRESET_TARGET = { int: 1583, luk: 100, atk: 1963 };
+
+      const partsBody = document.getElementById("parts-body");
+
+      PARTS.forEach((row, idx) => {
+        const name = row[0];
+        const tr = document.createElement("tr");
+        tr.className = "border-b border-slate-100 last:border-b-0";
+        const isWeapon = name === "무기";
+        const cellInput = (field, fieldIdx) => {
+          const v = row[fieldIdx + 1];
+          const valAttr = v === "" ? "" : ` value="${v}"`;
+          const disabled = !isWeapon && MAG_FIELDS.has(field);
+          const disAttr = disabled ? ' disabled' : '';
+          const cellCls = disabled ? 'bg-slate-100' : '';
+          const inputCls = disabled ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : '';
+          return `<td class="py-1 px-0.5 ${cellCls}"><input type="number" data-part="${idx}" data-field="${field}" placeholder="${disabled ? '-' : '-'}"${valAttr}${disAttr} class="w-full px-1 py-1 border border-slate-200 rounded text-xs text-center ${inputCls}"></td>`;
+        };
+        tr.innerHTML = `
+          <td class="py-1 pr-2 font-medium ${isWeapon ? 'text-orange-700' : 'text-slate-700'}">${name}</td>
+          ${FIELDS.map((f, i) => cellInput(f, i)).join("")}
+        `;
+        partsBody.appendChild(tr);
+      });
+
+      // 기본값 / 검증값 prefill
+      document.querySelector('[data-base="int"]').value = PRESET_BASE.int;
+      document.querySelector('[data-base="luk"]').value = PRESET_BASE.luk;
+      document.querySelector('[data-target="int"]').value = PRESET_TARGET.int;
+      document.querySelector('[data-target="luk"]').value = PRESET_TARGET.luk;
+      document.querySelector('[data-target="atk"]').value = PRESET_TARGET.atk;
+
+      const num = (sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return 0;
+        const v = parseFloat(el.value);
+        return isFinite(v) ? v : 0;
+      };
+
+      const diffBadge = (calc, target) => {
+        if (!target) return "";
+        const d = calc - target;
+        if (Math.abs(d) < 1) return `<span class="text-green-600">✓</span>`;
+        const sign = d > 0 ? "+" : "";
+        const color = d > 0 ? "text-blue-500" : "text-red-500";
+        return `<span class="${color}">(${sign}${d.toFixed(0)})</span>`;
+      };
+
+      function recalc() {
+        const baseInt = num('[data-base="int"]');
+        const baseLuk = num('[data-base="luk"]');
+
+        let sumInt = 0, sumIntP = 0;
+        let sumLuk = 0, sumLukP = 0;
+        let sumAtk = 0, sumAtkP = 0;
+        let sumTotalDmg = 0;
+
+        PARTS.forEach((_, idx) => {
+          sumInt += num(`[data-part="${idx}"][data-field="int"]`);
+          sumIntP += num(`[data-part="${idx}"][data-field="intp"]`);
+          sumLuk += num(`[data-part="${idx}"][data-field="luk"]`);
+          sumLukP += num(`[data-part="${idx}"][data-field="lukp"]`);
+          sumAtk += num(`[data-part="${idx}"][data-field="atk"]`);
+          sumAtkP += num(`[data-part="${idx}"][data-field="atkp"]`);
+          sumTotalDmg += num(`[data-part="${idx}"][data-field="totaldmg"]`);
+        });
+
+        const intMult = 1 + sumIntP / 100;
+        const lukMult = 1 + sumLukP / 100;
+        const atkMult = 1 + sumAtkP / 100;
+
+        const totalInt = (baseInt + sumInt) * intMult;
+        const totalLuk = (baseLuk + sumLuk) * lukMult;
+        const finalMagic = (totalInt + sumAtk) * atkMult;
+
+        // 합산 표시
+        document.getElementById("sum-int").textContent = sumInt;
+        document.getElementById("sum-intp").textContent = sumIntP + "%";
+        document.getElementById("sum-luk").textContent = sumLuk;
+        document.getElementById("sum-lukp").textContent = sumLukP + "%";
+        document.getElementById("sum-atk").textContent = sumAtk;
+        document.getElementById("sum-atkp").textContent = sumAtkP + "%";
+
+        // 결과 (인게임 동작에 맞춰 floor)
+        const totalIntF = Math.floor(totalInt);
+        const totalLukF = Math.floor(totalLuk);
+        const finalMagicF = Math.floor(finalMagic);
+        document.getElementById("total-int").textContent = totalIntF;
+        document.getElementById("total-luk").textContent = totalLukF;
+        document.getElementById("final-magic").textContent = finalMagicF;
+
+        // 디버그 분해
+        document.getElementById("d-baseint").textContent = (baseInt + sumInt).toFixed(0);
+        document.getElementById("d-intmult").textContent = "×" + intMult.toFixed(2);
+        document.getElementById("d-totalint").textContent = totalInt.toFixed(1);
+        document.getElementById("d-magbase").textContent = (totalInt + sumAtk).toFixed(1);
+        document.getElementById("d-magmult").textContent = "×" + atkMult.toFixed(2);
+
+        // 검증 diff
+        const tInt = num('[data-target="int"]');
+        const tLuk = num('[data-target="luk"]');
+        const tAtk = num('[data-target="atk"]');
+        document.getElementById("diff-int").innerHTML = diffBadge(totalIntF, tInt);
+        document.getElementById("diff-luk").innerHTML = diffBadge(totalLukF, tLuk);
+        document.getElementById("diff-atk").innerHTML = diffBadge(finalMagicF, tAtk);
+
+        // 데미지 계산기 - 마력/INT/총뎀% auto 전달
+        document.getElementById("dmg-mag").value = finalMagicF;
+        document.getElementById("dmg-int").value = totalIntF;
+        document.getElementById("dmg-totaldmg").value = sumTotalDmg;
+        recalcDmg(finalMagicF, totalIntF);
+      }
+
+      // 앰플 0~20: 너 측정값 (Lv1=1.07, Lv2=1.09, Lv3=1.11) 기준 선형 외삽
+      // mult(0) = 1.0, mult(L>=1) = 1.05 + 0.02*L
+      const AMP_LEVELS = (() => {
+        const arr = [{ name: '앰플0', mult: 1.00 }];
+        for (let L = 1; L <= 20; L++) {
+          arr.push({ name: `앰플${L}`, mult: 1.05 + 0.02 * L });
+        }
+        return arr;
+      })();
+
+      // 플래닛 데미지 공식:
+      // DMG = ((M²/1000 + M×0.9×F)/30 + INT/200) × Skill × 원소 × (1+총뎀%/100) × amp
+      // F = MAX 면 1.0, MIN 이면 숙련도 (예: 0.6)
+      function dmg(M, INT, skill, elem, totalDmgPct, F, mult) {
+        const core = ((M * M) / 1000 + M * 0.9 * F) / 30 + INT / 200;
+        return core * skill * elem * (1 + totalDmgPct / 100) * mult;
+      }
+
+      // 필요 마력 역산
+      // (M²/1000 + 0.9F·M)/30 + INT/200 = target/X
+      // M² + 900F·M = 30000 × (target/X - INT/200)
+      function needMagic(target, INT, skill, elem, totalDmgPct, F, mult) {
+        const X = skill * elem * (1 + totalDmgPct / 100) * mult;
+        if (X <= 0) return Infinity;
+        const t = target / X - INT / 200;
+        if (t <= 0) return 0;
+        const rhs = 30000 * t;
+        const b = 900 * F;
+        return Math.ceil((-b + Math.sqrt(b * b + 4 * rhs)) / 2);
+      }
+
+      function recalcDmg(magic, intStat) {
+        const skill = num('#dmg-skill');
+        const totalDmgPct = num('#dmg-totaldmg');
+        const elem = parseFloat(document.querySelector('#dmg-elem').value) || 1.0;
+        const masteryPct = num('#dmg-mastery');
+        const mastery = masteryPct / 100;
+        const hp = num('#dmg-hp');
+        const ampIdx = parseInt(document.getElementById('dmg-amp').value, 10) || 0;
+        const { mult } = AMP_LEVELS[ampIdx];
+
+        // MAX 식: F=1.0, MIN 식: F=mastery
+        const max = Math.floor(dmg(magic, intStat, skill, elem, totalDmgPct, 1.0, mult));
+        const min = Math.floor(dmg(magic, intStat, skill, elem, totalDmgPct, mastery, mult));
+        const canMinKill = min >= hp;
+        const needMinMag = needMagic(hp, intStat, skill, elem, totalDmgPct, mastery, mult);
+        const diff = needMinMag - magic;
+
+        document.getElementById('dmg-result-range').textContent =
+          `${min.toLocaleString()} ~ ${max.toLocaleString()}`;
+        document.getElementById('dmg-result-range').className =
+          `text-lg font-mono font-bold ${canMinKill ? 'text-green-600' : 'text-slate-700'}`;
+        document.getElementById('dmg-result-kill').textContent =
+          canMinKill ? '1킬: ✓ (안정)' : (max >= hp ? '1킬: △ (MAX 만 가능)' : '1킬: ✗');
+        document.getElementById('dmg-result-kill').className =
+          `text-xs mt-1 ${canMinKill ? 'text-green-600' : (max >= hp ? 'text-amber-600' : 'text-red-500')}`;
+
+        document.getElementById('dmg-result-need').textContent = needMinMag.toLocaleString();
+        const diffStr = diff <= 0 ? `✓ (현재 ${magic}, 여유 ${-diff})` : `+${diff} 부족 (현재 ${magic})`;
+        document.getElementById('dmg-result-diff').textContent = `vs 현재: ${diffStr}`;
+        document.getElementById('dmg-result-diff').className =
+          `text-xs mt-1 ${diff <= 0 ? 'text-green-600' : 'text-red-500'}`;
+      }
+
+      document.addEventListener("input", (e) => {
+        if (e.target.matches("input[type='number']")) recalc();
+      });
+      // 데미지 계산기 입력 변화 시 (마력은 위에서 옴)
+      ['#dmg-skill', '#dmg-hp', '#dmg-mastery', '#dmg-elem', '#dmg-amp'].forEach((sel) => {
+        const el = document.querySelector(sel);
+        if (el) el.addEventListener('input', () => recalcDmg(num('#dmg-mag'), num('#dmg-int')));
+        if (el && el.tagName === 'SELECT') el.addEventListener('change', () => recalcDmg(num('#dmg-mag'), num('#dmg-int')));
+      });
+
+      // 스킬 데이터 (마스터 레벨 / BA 공식 / 숙련도 / 속성)
+      const SKILLS = {
+        'magic-claw':      { name: '매직클로 (2타)',  maxLevel: 20, mastery: 60, ba: (L) => 2 * L,       element: 'none' },
+        'thunder-bolt':    { name: '썬더볼트',         maxLevel: 30, mastery: 60, ba: (L) => 2 * L,       element: 'lightning' },
+        'ice-strike':      { name: '아이스스트라이크', maxLevel: 30, mastery: 60, ba: (L) => 3 * L,       element: 'ice' },
+        'chain-lightning': { name: '체인라이트닝',     maxLevel: 30, mastery: 60, ba: (L) => 6 * L,       element: 'lightning' },
+        'blizzard':        { name: '블리자드',         maxLevel: 30, mastery: 60, ba: (L) => 420 + 5 * L, element: 'ice' },
+        'big-bang':        { name: '빅뱅',             maxLevel: 30, mastery: 80, ba: (L) => 15 * L,      element: 'none' },
+      };
+
+      // 사냥터 → 몬스터 데이터 (사냥터의 최고 레벨 몹 기준 오름차순 정렬)
+      // weak: 약점 속성 배열. resist: 반감 속성 배열.
+      const MAPS = {
+        '커닝타워':               [
+          { name: '최신곡 CD',         level: 46,  hp: 2520,    weak: [] },
+        ],
+        '마가티아 C-1':           [
+          { name: '로이드',            level: 54,  hp: 4400,    weak: [] },
+        ],
+        '골렘의 숲':              [
+          { name: '다크 스톤골렘',     level: 58,  hp: 4800,    weak: ['holy'] },
+          { name: '믹스골렘',          level: 59,  hp: 6000,    weak: [] },
+        ],
+        '마가티아 C-2':           [
+          { name: '로이드',            level: 54,  hp: 4400,    weak: [] },
+          { name: '네오 휴로이드',     level: 58,  hp: 5600,    weak: [] },
+          { name: '루루모',            level: 63,  hp: 7600,    weak: [] },
+        ],
+        '빨간코 해적단 소굴2':    [
+          { name: '크루',              level: 68,  hp: 12500,   weak: [] },
+          { name: '캡틴',              level: 70,  hp: 15000,   weak: [] },
+        ],
+        '하늘둥지2':              [
+          { name: '하프',              level: 80,  hp: 27000,   weak: [] },
+          { name: '블러드 하프',       level: 83,  hp: 30000,   weak: ['ice'], resist: ['fire'] },
+        ],
+        '붉은 켄타우로스의 영역':  [
+          { name: '붉은 켄타우로스',   level: 88,  hp: 37000,   weak: ['ice'],  resist: ['fire'] },
+        ],
+        '켄타우로스 원탁':        [
+          { name: '검은 켄타우로스',   level: 88,  hp: 37000,   weak: ['holy'] },
+          { name: '붉은 켄타우로스',   level: 88,  hp: 37000,   weak: ['ice'],  resist: ['fire'] },
+          { name: '푸른 켄타우로스',   level: 88,  hp: 37000,   weak: ['fire'], resist: ['ice'] },
+        ],
+        '깊은 바다 협곡2':        [
+          { name: '망둥이',            level: 85,  hp: 17000,   weak: [], resist: ['fire'] },
+          { name: '폭렬 망둥이집',     level: 90,  hp: 40500,   weak: [], resist: ['fire'] },
+          { name: '본피쉬',            level: 92,  hp: 42500,   weak: ['fire'] },
+        ],
+        '난파선의 무덤':          [
+          { name: '폭렬 망둥이집',     level: 90,  hp: 40500,   weak: [], resist: ['fire'] },
+          { name: '샤크',              level: 100, hp: 56000,   weak: [], resist: ['fire'] },
+          { name: '콜드샤크',          level: 102, hp: 58500,   weak: [], resist: ['fire', 'ice'] },
+        ],
+        '망가진 용의 둥지':       [
+          { name: '뉴트주니어',         level: 105, hp: 68000,  weak: [] },
+        ],
+        '망각의 길3':             [
+          { name: '시간의 눈',         level: 80,  hp: 24000,   weak: ['ice', 'lightning'] },
+          { name: '망각의 수호병',     level: 128, hp: 133000,  weak: ['ice', 'lightning'] },
+        ],
+        '망각의 길4':             [
+          { name: '시간의 눈',         level: 80,  hp: 24000,   weak: ['ice', 'lightning'] },
+          { name: '망각의 수호병',     level: 128, hp: 133000,  weak: ['ice', 'lightning'] },
+          { name: '망각의 수호대장',   level: 131, hp: 141000,  weak: ['ice', 'lightning'] },
+        ],
+        '직접 입력':              [
+          { name: '(수동 입력)',        level: 0,   hp: 133000, weak: [] },
+        ],
+      };
+
+      const ELEM_LABEL = { ice: '얼음', lightning: '번개', fire: '불', poison: '독', holy: '성', dark: '암흑' };
+
+      // 앰플 dropdown 채우기
+      const ampSel = document.getElementById('dmg-amp');
+      AMP_LEVELS.forEach((amp, i) => {
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = `${amp.name} (×${amp.mult.toFixed(2)})`;
+        ampSel.appendChild(opt);
+      });
+      ampSel.value = '3'; // default
+
+      // 사냥터 dropdown 채우기
+      const mapSel = document.getElementById('dmg-map');
+      Object.keys(MAPS).forEach((mapName) => {
+        const opt = document.createElement('option');
+        opt.value = mapName;
+        opt.textContent = mapName;
+        mapSel.appendChild(opt);
+      });
+      mapSel.value = '망각의 길3'; // default
+
+      function fillMobOptions() {
+        const mobSel = document.getElementById('dmg-mob');
+        mobSel.innerHTML = '';
+        const mobs = MAPS[mapSel.value] || [];
+        mobs.forEach((m, i) => {
+          const opt = document.createElement('option');
+          opt.value = String(i);
+          opt.textContent = `${m.name} (Lv${m.level})`;
+          mobSel.appendChild(opt);
+        });
+        mobSel.value = String(mobs.length - 1);
+      }
+
+      function applyMobPreset() {
+        const mobs = MAPS[mapSel.value] || [];
+        const idx = parseInt(document.getElementById('dmg-mob').value, 10) || 0;
+        const mob = mobs[idx];
+        if (!mob) return;
+        document.getElementById('dmg-hp').value = mob.hp;
+
+        // 스킬 속성 vs 몹 속성 매칭 (다중 약점 지원)
+        const skillKey = document.getElementById('dmg-skill-name').value;
+        const skillElem = (SKILLS[skillKey] || {}).element || 'none';
+        const weakArr = mob.weak || [];
+        const resistArr = mob.resist || [];
+        let mult = 1.0;
+        if (skillElem !== 'none' && weakArr.includes(skillElem)) mult = 1.5;
+        else if (skillElem !== 'none' && resistArr.includes(skillElem)) mult = 0.5;
+        document.getElementById('dmg-elem').value = String(mult);
+
+        recalcDmg(num('#dmg-mag'), num('#dmg-int'));
+      }
+      mapSel.addEventListener('change', () => { fillMobOptions(); applyMobPreset(); });
+      document.getElementById('dmg-mob').addEventListener('change', applyMobPreset);
+
+      fillMobOptions();
+
+      function applySkillPreset() {
+        const key = document.getElementById('dmg-skill-name').value;
+        const s = SKILLS[key];
+        if (!s) return;
+        const lvlEl = document.getElementById('dmg-skill-level');
+        lvlEl.max = s.maxLevel;
+        document.getElementById('dmg-skill-max').textContent = `(max ${s.maxLevel})`;
+        const raw = lvlEl.value;
+        // 빈 칸이면 BA/숙련도 그대로 두고 사용자가 마저 입력하게 둠
+        if (raw === '') return;
+        let level = parseInt(raw, 10);
+        if (!isFinite(level) || level < 1) return;
+        if (level > s.maxLevel) {
+          level = s.maxLevel;
+          lvlEl.value = level; // max로만 cap
+        }
+        document.getElementById('dmg-skill').value = s.ba(level);
+        document.getElementById('dmg-mastery').value = s.mastery;
+        recalcDmg(num('#dmg-mag'), num('#dmg-int'));
+      }
+      document.getElementById('dmg-skill-name').addEventListener('change', () => {
+        // 스킬 바뀌면 레벨도 max 로 리셋
+        const s = SKILLS[document.getElementById('dmg-skill-name').value];
+        if (s) document.getElementById('dmg-skill-level').value = s.maxLevel;
+        applySkillPreset();
+        applyMobPreset(); // 원소상성 재계산
+      });
+      document.getElementById('dmg-skill-level').addEventListener('input', applySkillPreset);
+
+      document.getElementById("reset-btn").addEventListener("click", () => {
+        document.querySelectorAll("input[type='number']").forEach((el) => (el.value = ""));
+        recalc();
+      });
+
+      // 탭 전환
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-tab');
+          document.querySelectorAll('.tab-btn').forEach(b => {
+            const active = b.getAttribute('data-tab') === target;
+            b.className = active
+              ? 'tab-btn relative py-3 font-semibold text-slate-900'
+              : 'tab-btn relative py-3 font-medium text-slate-500 hover:text-slate-900';
+            const underline = b.querySelector('.tab-underline');
+            if (underline) underline.classList.toggle('hidden', !active);
+          });
+          document.querySelectorAll('[data-tabpanel]').forEach(p => {
+            p.classList.toggle('hidden', p.getAttribute('data-tabpanel') !== target);
+          });
+        });
+      });
+
+      // 레벨에 따른 총 AP 계산 (3차 +5 @ 70, 4차 +5 @ 120)
+      function levelAp(level) {
+        let ap = 5 * (level - 1);
+        if (level >= 70) ap += 5;
+        if (level >= 120) ap += 5;
+        return ap;
+      }
+
+      // 마법사 가정: STR/DEX = 4 고정, INT + LUK = 17 + AP
+      function baseStatSum(level) {
+        return 17 + levelAp(level);
+      }
+
+      // 기본 스탯 자동 채우기 (all-in 주스탯)
+      document.getElementById('auto-fill-base').addEventListener('click', () => {
+        const level = parseInt(document.getElementById('char-level').value, 10) || 1;
+        const job = document.getElementById('job-select').value;
+        const primary = 13 + levelAp(level);
+        const secondary = 4;
+
+        let baseInt, baseLuk;
+        if (job === 'mage') {
+          baseInt = primary; baseLuk = secondary;
+        } else if (job === 'thief') {
+          baseInt = secondary; baseLuk = primary;
+        } else {
+          baseInt = secondary; baseLuk = secondary;
+        }
+        document.querySelector('[data-base="int"]').value = baseInt;
+        document.querySelector('[data-base="luk"]').value = baseLuk;
+        recalc();
+      });
+
+      // 기본 INT ↔ LUK 양방향 자동 연동 (마법사만)
+      let baseLinkLock = false;
+      function linkBaseStats(changed) {
+        if (baseLinkLock) return;
+        const job = document.getElementById('job-select').value;
+        if (job !== 'mage') return;
+        const level = parseInt(document.getElementById('char-level').value, 10) || 1;
+        const sum = baseStatSum(level);
+        const intEl = document.querySelector('[data-base="int"]');
+        const lukEl = document.querySelector('[data-base="luk"]');
+        baseLinkLock = true;
+        if (changed === 'int') {
+          const v = parseFloat(intEl.value);
+          if (isFinite(v)) lukEl.value = Math.max(4, sum - v);
+        } else {
+          const v = parseFloat(lukEl.value);
+          if (isFinite(v)) intEl.value = Math.max(13, sum - v);
+        }
+        baseLinkLock = false;
+        recalc();
+      }
+      document.querySelector('[data-base="int"]').addEventListener('input', () => linkBaseStats('int'));
+      document.querySelector('[data-base="luk"]').addEventListener('input', () => linkBaseStats('luk'));
+
+      // 4 미만 입력 방지 (alert + 4로 리셋)
+      function validateBaseMin(el, label) {
+        const v = parseFloat(el.value);
+        if (isFinite(v) && v < 4) {
+          alert(`기본 ${label} 는 4 미만이 될 수 없습니다. (캐릭터 시작 기본값 = 4)`);
+          el.value = 4;
+          linkBaseStats(label === 'INT' ? 'int' : 'luk');
+        }
+      }
+      document.querySelector('[data-base="int"]').addEventListener('change',
+        (e) => validateBaseMin(e.target, 'INT'));
+      document.querySelector('[data-base="luk"]').addEventListener('change',
+        (e) => validateBaseMin(e.target, 'LUK'));
+
+      // 간단 모드: 인게임 스탯창 그대로 입력 → sidebar + damage calc 에 직접 반영
+      function recalcSimple() {
+        const totalInt = Math.floor(num('#simple-int'));
+        const totalLuk = Math.floor(num('#simple-luk'));
+        const finalMagic = Math.floor(num('#simple-mag'));
+        const totalDmgPct = num('#simple-totaldmg');
+
+        document.getElementById('total-int').textContent = totalInt;
+        document.getElementById('total-luk').textContent = totalLuk;
+        document.getElementById('final-magic').textContent = finalMagic;
+        document.getElementById('diff-int').innerHTML = '';
+        document.getElementById('diff-luk').innerHTML = '';
+        document.getElementById('diff-atk').innerHTML = '';
+
+        document.getElementById('dmg-mag').value = finalMagic;
+        document.getElementById('dmg-int').value = totalInt;
+        document.getElementById('dmg-totaldmg').value = totalDmgPct;
+        recalcDmg(finalMagic, totalInt);
+      }
+      ['#simple-int', '#simple-luk', '#simple-mag', '#simple-totaldmg'].forEach(sel => {
+        const el = document.querySelector(sel);
+        if (el) el.addEventListener('input', recalcSimple);
+      });
+
+      // Sub-tab 전환 (간단 / 부위별)
+      let statMode = 'simple';
+      function switchSubTab(target) {
+        statMode = target;
+        document.querySelectorAll('.subtab-btn').forEach(b => {
+          const active = b.getAttribute('data-subtab') === target;
+          b.className = active
+            ? 'subtab-btn px-3 py-2 font-semibold text-slate-900 border-b-2 border-orange-500 -mb-px'
+            : 'subtab-btn px-3 py-2 font-medium text-slate-500 hover:text-slate-900 border-b-2 border-transparent -mb-px';
+        });
+        document.querySelectorAll('[data-subpanel]').forEach(p => {
+          p.classList.toggle('hidden', p.getAttribute('data-subpanel') !== target);
+        });
+        document.getElementById('debug-breakdown').style.display = target === 'detail' ? '' : 'none';
+        if (target === 'simple') recalcSimple();
+        else recalc();
+      }
+      document.querySelectorAll('.subtab-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchSubTab(btn.getAttribute('data-subtab')));
+      });
+
+      // 초기 진입: 간단 모드
+      switchSubTab('simple');
+      applySkillPreset();
+      applyMobPreset();
+    </script>
+  </body>
+</html>

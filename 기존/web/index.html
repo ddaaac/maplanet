@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>메이플 플래닛 환산 주스탯 계산기</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      [v-cloak] {
+        display: none;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", sans-serif;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900 min-h-screen">
+    <div id="app" v-cloak class="max-w-7xl mx-auto p-4 sm:p-6">
+      <header class="mb-6">
+        <h1 class="text-2xl sm:text-3xl font-bold">메이플 플래닛 환산 주스탯 계산기</h1>
+        <p class="text-sm text-slate-600 mt-1">인게임 스탯창에 보이는 숫자를 그대로 옮겨 적으면 환산값이 계산됩니다.</p>
+      </header>
+
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+        <!-- 입력 영역 -->
+        <main class="space-y-4">
+          <!-- 캐릭터 -->
+          <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <h2 class="font-semibold mb-3 flex items-center gap-2">
+              <span class="inline-block w-1.5 h-5 bg-orange-500 rounded"></span>
+              캐릭터
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">직업</label>
+                <select v-model="c.job" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                  <option v-for="(meta, j) in JOBS" :key="j" :value="j">{{ j }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">레벨</label>
+                <input v-model.number="c.level" type="number" min="1" max="200" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">무기</label>
+                <select v-model="c.weapon" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                  <option v-for="w in JOBS[c.job].weapons" :key="w" :value="w">{{ w }}</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <!-- 표기 스탯 -->
+          <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <h2 class="font-semibold mb-3 flex items-center gap-2">
+              <span class="inline-block w-1.5 h-5 bg-orange-500 rounded"></span>
+              표기 스탯 (스탯창 그대로)
+            </h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div v-for="s in ['str','dex','int','luk']" :key="s">
+                <label class="block text-xs text-slate-600 mb-1 uppercase">{{ s }}</label>
+                <input v-model.number="c[s]" type="number" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">표기 공격력 (min)</label>
+                <input v-model.number="c.weaponAttackMin" type="number" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">표기 공격력 (max)</label>
+                <input v-model.number="c.weaponAttackMax" type="number" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">표기 마력</label>
+                <input v-model.number="c.magicAttack" type="number" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+              </div>
+            </div>
+          </section>
+
+          <!-- 잠재 합산 -->
+          <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <h2 class="font-semibold mb-3 flex items-center gap-2">
+              <span class="inline-block w-1.5 h-5 bg-orange-500 rounded"></span>
+              잠재 / 능력치 % (스탯창 우측 합산값)
+            </h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div v-for="opt in POT_FIELDS" :key="opt.key">
+                <label class="block text-xs text-slate-600 mb-1">{{ opt.label }}</label>
+                <div class="relative">
+                  <input v-model.number="c.pot[opt.key]" type="number" min="0" step="1" class="w-full px-3 py-2 pr-8 border border-slate-300 rounded-lg text-sm" />
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-500 mt-3">
+              <strong>방어율 무시</strong> 가 여러 줄이면 1-(1-a)(1-b)(1-c) 공식으로 합쳐 입력하세요. 단순 합산보다 정확합니다.
+            </p>
+          </section>
+
+          <!-- 타겟 -->
+          <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <h2 class="font-semibold mb-3 flex items-center gap-2">
+              <span class="inline-block w-1.5 h-5 bg-orange-500 rounded"></span>
+              타겟
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">대상</label>
+                <div class="flex gap-2">
+                  <button type="button" @click="c.target.isBoss = false" :class="c.target.isBoss ? 'bg-slate-100' : 'bg-orange-500 text-white'" class="flex-1 py-2 rounded-lg text-sm">일반</button>
+                  <button type="button" @click="c.target.isBoss = true" :class="c.target.isBoss ? 'bg-orange-500 text-white' : 'bg-slate-100'" class="flex-1 py-2 rounded-lg text-sm">보스</button>
+                </div>
+              </div>
+              <div v-if="c.target.isBoss">
+                <label class="block text-xs text-slate-600 mb-1">보스 PDD %</label>
+                <input v-model.number="c.target.bossPdd" type="number" min="0" max="100" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">주력기 데미지% (예: 메테오 350)</label>
+                <input v-model.number="c.skill.damagePct" type="number" min="100" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <!-- 결과 (sticky on desktop, bottom on mobile) -->
+        <aside class="lg:sticky lg:top-4 lg:self-start space-y-4">
+          <section class="bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-xl shadow-md p-5">
+            <div class="text-xs uppercase tracking-wider opacity-80">환산 {{ JOBS[c.job].main }}</div>
+            <div class="text-4xl font-bold mt-1">{{ fmt(result.hwansan) }}</div>
+            <div class="text-xs opacity-80 mt-3">주력기 단타 추정</div>
+            <div class="text-2xl font-semibold">{{ fmt(result.damage) }}</div>
+          </section>
+          <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <h3 class="text-sm font-semibold mb-3">계산 내역</h3>
+            <dl class="text-xs space-y-1.5">
+              <div class="flex justify-between"><dt class="text-slate-500">기본 데미지</dt><dd>{{ fmt(result.base) }}</dd></div>
+              <div class="flex justify-between"><dt class="text-slate-500">데미지% 곱</dt><dd>×{{ result.dmgMult.toFixed(3) }}</dd></div>
+              <div class="flex justify-between"><dt class="text-slate-500">총뎀% 곱</dt><dd>×{{ result.totMult.toFixed(3) }}</dd></div>
+              <div class="flex justify-between" v-if="c.target.isBoss"><dt class="text-slate-500">보스뎀% 곱</dt><dd>×{{ result.bossMult.toFixed(3) }}</dd></div>
+              <div class="flex justify-between"><dt class="text-slate-500">크리 기댓값</dt><dd>×{{ result.critMult.toFixed(3) }}</dd></div>
+              <div class="flex justify-between" v-if="c.target.isBoss"><dt class="text-slate-500">방무·PDD</dt><dd>×{{ result.pddMult.toFixed(3) }}</dd></div>
+            </dl>
+          </section>
+          <section class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+            <strong>주의:</strong> 무기상수(min/마스터리), 스킬 패시브, 정확한 보스 PDD 등은 추후 검증 필요. 현재는 단순화된 식.
+          </section>
+        </aside>
+      </div>
+
+      <footer class="mt-8 text-center text-xs text-slate-500">
+        v0.1 PoC · 데이터 출처: mapledb.kr · 메랜 N방컷 계산기 · 메플플 큐브 페이지
+      </footer>
+    </div>
+
+    <script>
+      const { createApp, reactive, computed } = Vue;
+
+      const JOBS = {
+        히어로: { branch: "전사", main: "STR", sub: "DEX", attackType: "physical", weapons: ["한손검", "두손검"] },
+        팔라딘: { branch: "전사", main: "STR", sub: "DEX", attackType: "physical", weapons: ["한손검", "한손둔기", "두손검", "두손둔기"] },
+        다크나이트: { branch: "전사", main: "STR", sub: "DEX", attackType: "physical", weapons: ["창", "폴암"] },
+        "아크메이지(불,독)": { branch: "마법사", main: "INT", sub: "LUK", attackType: "magic", weapons: ["완드", "스태프"] },
+        "아크메이지(썬,콜)": { branch: "마법사", main: "INT", sub: "LUK", attackType: "magic", weapons: ["완드", "스태프"] },
+        비숍: { branch: "마법사", main: "INT", sub: "LUK", attackType: "magic", weapons: ["완드", "스태프"] },
+        보우마스터: { branch: "궁수", main: "DEX", sub: "STR", attackType: "physical", weapons: ["활"] },
+        신궁: { branch: "궁수", main: "DEX", sub: "STR", attackType: "physical", weapons: ["석궁"] },
+        나이트로드: { branch: "도적", main: "LUK", sub: "DEX", attackType: "physical", weapons: ["표창"] },
+        섀도어: { branch: "도적", main: "LUK", sub: "DEX_STR", attackType: "physical", weapons: ["단검"] },
+      };
+
+      const WC = {
+        한손검: { max: 4.0, min: 1.2 },
+        한손둔기: { max: 4.4, min: 3.2 },
+        두손검: { max: 4.6, min: 3.2 },
+        두손둔기: { max: 4.8, min: 3.4 },
+        창: { max: 3.0, min: 1.0 },
+        폴암: { max: 3.0, min: 1.0 },
+        활: { max: 3.4, min: 1.2 },
+        석궁: { max: 3.6, min: 1.2 },
+        단검: { max: 3.6, min: 1.3 },
+        표창: { max: 3.6, min: 1.3 },
+        완드: { max: 1.0, min: 1.0 },
+        스태프: { max: 1.0, min: 1.0 },
+      };
+
+      const POT_FIELDS = [
+        { key: "damagePct", label: "데미지%" },
+        { key: "totalDamagePct", label: "총 데미지%" },
+        { key: "bossDamagePct", label: "보스 데미지%" },
+        { key: "ignoreDefPct", label: "방어율 무시%" },
+        { key: "critRatePct", label: "크리티컬 확률%" },
+        { key: "critDamagePct", label: "크리티컬 데미지%" },
+      ];
+
+      function fmt(n) {
+        if (!isFinite(n)) return "—";
+        const a = Math.abs(n);
+        if (a >= 1e9) return (n / 1e9).toFixed(2) + "B";
+        if (a >= 1e6) return (n / 1e6).toFixed(2) + "M";
+        if (a >= 1e3) return (n / 1e3).toFixed(2) + "K";
+        return Math.round(n).toLocaleString();
+      }
+
+      function critExpect(rate, dmg) {
+        const r = Math.min(100, Math.max(0, rate)) / 100;
+        const d = (dmg || 0) / 100;
+        return (1.35 + d) * r + (1 - r);
+      }
+
+      function calcResult(c) {
+        const job = JOBS[c.job];
+        const wc = WC[c.weapon] || { max: 1, min: 1 };
+        const dmgMult = 1 + c.pot.damagePct / 100;
+        const totMult = 1 + c.pot.totalDamagePct / 100;
+        const bossMult = c.target.isBoss ? 1 + c.pot.bossDamagePct / 100 : 1;
+        const critMult = critExpect(c.pot.critRatePct, c.pot.critDamagePct);
+        const pddMult = c.target.isBoss ? Math.max(0, 1 - (c.target.bossPdd / 100) * (1 - c.pot.ignoreDefPct / 100)) : 1;
+
+        let base = 0,
+          hwansan = 0;
+        if (job.attackType === "magic") {
+          const mad = c.magicAttack;
+          base = (mad * mad / 1000 + mad) / 30 + c.int / 200;
+          hwansan = c.int * c.magicAttack;
+        } else {
+          const main = c[job.main.toLowerCase()];
+          const sub = job.sub === "DEX_STR" ? c.dex + c.str : c[job.sub.toLowerCase()];
+          const watt = (c.weaponAttackMin + c.weaponAttackMax) / 2;
+          const max = (main * wc.max + sub) * watt / 100;
+          const min = (main * wc.min * 0.9 * 0.7 /* mastery placeholder */ + sub) * watt / 100;
+          base = (max + min) / 2;
+          hwansan = (main + sub / wc.max) * watt;
+        }
+        const skillPct = (c.skill.damagePct || 100) / 100;
+        const damage = base * skillPct * dmgMult * totMult * bossMult * critMult * pddMult;
+        hwansan *= dmgMult * totMult * bossMult * critMult * pddMult;
+        return { base, dmgMult, totMult, bossMult, critMult, pddMult, damage, hwansan };
+      }
+
+      createApp({
+        setup() {
+          const c = reactive({
+            job: "아크메이지(썬,콜)",
+            level: 114,
+            weapon: "스태프",
+            str: 4,
+            dex: 17,
+            int: 1152,
+            luk: 104,
+            weaponAttackMin: 13,
+            weaponAttackMax: 25,
+            magicAttack: 1493,
+            pot: { damagePct: 0, totalDamagePct: 0, bossDamagePct: 0, ignoreDefPct: 0, critRatePct: 0, critDamagePct: 0 },
+            target: { isBoss: true, bossPdd: 30 },
+            skill: { damagePct: 350 },
+          });
+          const result = computed(() => calcResult(c));
+          return { c, result, JOBS, POT_FIELDS, fmt };
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>
