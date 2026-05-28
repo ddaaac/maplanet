@@ -54,7 +54,7 @@
         <div class="space-y-3">
           <!-- 캐릭터 (컴팩트) -->
           <section class="bg-white rounded-lg border border-slate-200 px-3 py-2">
-            <div class="grid grid-cols-4 gap-2 items-end">
+            <div class="grid grid-cols-5 gap-2 items-end">
               <label class="text-xs">
                 <span class="text-slate-500">직업</span>
                 <div class="mt-0.5 px-2 py-1 border border-slate-200 bg-slate-50 rounded text-sm font-medium">도적</div>
@@ -72,6 +72,11 @@
               <label class="text-xs">
                 <span class="text-slate-500">순수 DEX</span>
                 <input type="number" id="base-dex" value="69"
+                  class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
+              </label>
+              <label class="text-xs">
+                <span class="text-slate-500">표기 STR</span>
+                <input type="number" id="disp-str" value="12"
                   class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
               </label>
             </div>
@@ -125,8 +130,9 @@
                   <strong class="text-orange-300">럭키 세븐 / 트리플 스로우 특수 공식</strong><br>
                   <code class="text-orange-200">한 타격 최대값 = LUK × 5.0 × 무기공격력 / 100 × 스킬데미지%</code><br>
                   <code class="text-orange-200">한 타격 최소값 = LUK × 2.5 × 무기공격력 / 100 × 스킬데미지%</code><br><br>
-                  <strong>크리티컬</strong>: 한 크리당 추가 데미지 = (10 + 3×크리티컬 스로우 레벨) + (샤프 켰을 때 +100 + 샤프 크리데미지%)<br>
-                  크리 타격 = 일반 타격 × (1 + 한 크리당 추가 데미지 / 100)<br><br>
+                  <strong>크리티컬 (합연산)</strong>: 크리당 추가 %p = (10 + 3×크리스로우Lv) + (샤프 켰을 때 +100 + 샤프 크댐%)<br>
+                  <code class="text-orange-200">크리 타격 = 스공 × (스킬데미지% + 크리추가%p) / 100</code><br>
+                  ※ 곱연산 (일반×배율) 아님. 옛메 / 메플플 표준.<br><br>
                   <strong>한 사이클</strong> = 한 타격 × 타수 × 쉐도우 파트너(1 + 스킬데미지%) × (1 + 총 데미지%) × (보스전이면 1 + 보스 데미지%)<br><br>
                   <strong>기댓값</strong> = (1 − 크리확률) × 일반 평균 + 크리확률 × 크리 평균<br><br>
                   <strong class="text-orange-300">1타 데미지</strong> = 쉐도우 파트너 / 타수 제외 (인게임 데미지 숫자랑 매칭하려고)<br>
@@ -1128,12 +1134,14 @@
 
         const totalLuk = Math.floor((baseLuk + sumLuk) * (1 + totalLukP / 100));
         const totalDex = Math.floor((baseDex + sumDex) * (1 + totalDexP / 100));
+        // STR: 표창 도적 부스탯 = STR + DEX. 사용자가 인게임 표기값 직접 입력 (계산 안 함).
+        const dispStr = opts.dispStr || 0;
 
         // WA = floor(weaponAtk × (1 + atk%/100)) + 표창 + 기타공격력 + 혼테일
         const weaponEff = Math.floor(weaponAtk * (1 + sumAtkP / 100));
         const wa = weaponEff + thrAtk + sumAtkOther + (opts.horntail ? 30 : 0);
 
-        const stat = Math.floor((totalLuk * 3.6 + totalDex) * wa / 100);
+        const stat = Math.floor((totalLuk * 3.6 + totalDex + dispStr) * wa / 100);
         // ===== 최소 base AP + 장비별 활성 임계 base 역산 =====
         // 알고리즘: 게임 동작은 "base 가 정해지면 모든 장비 동시 합산 후 cycle". 순차 활성 X.
         //   → b 를 0 부터 +1 씩 올리며 simulateCycle. 새로 활성된 장비의 b 를 activatedAt 에 기록.
@@ -1224,8 +1232,10 @@
         if (sharpCrit > 0 || sharpDmg > 0) perCrit += (100 + sharpDmg);
 
         // LS/TT 특수 공식 - per hit
-        // MAX = LUK × 5 × WA / 100 × (skill_dmg/100)
-        // MIN = LUK × 2.5 × WA / 100 × (skill_dmg/100)
+        // MAX 스공 = LUK × 5 × WA / 100,  MIN 스공 = LUK × 2.5 × WA / 100
+        // 일반 데미지 = 스공 × (skill_dmg / 100)
+        // 크리 데미지 = 스공 × (skill_dmg + perCrit) / 100   ← 합연산 (메플플 마갤 / arca 검증)
+        //   perCrit = (10 + 3L_critthrow) + (100 + sharpDmg)[샤프 켰을 때]
         const LUK = statsObj.totalLuk;
         const WA = statsObj.wa;
         const atkSkill = opts.atkSkill || 'trs';
@@ -1233,13 +1243,14 @@
         const sData = SKILL_DATA[atkSkill];
         const skillDmgPct = sData.dmg[atkLv] || 0;
         const hits = sData.hits;
-        const perHitMax = LUK * 5    * WA / 100 * (skillDmgPct / 100);
-        const perHitMin = LUK * 2.5  * WA / 100 * (skillDmgPct / 100);
+        const statMax = LUK * 5    * WA / 100;
+        const statMin = LUK * 2.5  * WA / 100;
+        const perHitMax = statMax * (skillDmgPct / 100);
+        const perHitMin = statMin * (skillDmgPct / 100);
 
-        // 크리 적용 (per crit %p 가산)
-        const critMult = 1 + perCrit / 100;
-        const perHitCritMax = perHitMax * critMult;
-        const perHitCritMin = perHitMin * critMult;
+        // 크리 데미지 (합연산: skill_dmg %p + perCrit %p)
+        const perHitCritMax = statMax * (skillDmgPct + perCrit) / 100;
+        const perHitCritMin = statMin * (skillDmgPct + perCrit) / 100;
 
         // 쉐도우 파트너 (스킬 데미지 비율)
         const shadowLv = opts.shadowLv || 0;
@@ -1334,6 +1345,7 @@
           level: +document.getElementById('char-level').value || 135,
           baseLuk: +document.getElementById('base-luk').value || 0,
           baseDex: +document.getElementById('base-dex').value || 0,
+          dispStr: +document.getElementById('disp-str').value || 0,
           sharp: document.getElementById('sharp').value,
           horntail: document.getElementById('horntail').checked,
           boss: document.getElementById('boss-mode').checked,
@@ -1355,6 +1367,7 @@
         if (!savedConfig || Object.keys(savedConfig).length === 0) return;
         const map = {
           level: 'char-level', baseLuk: 'base-luk', baseDex: 'base-dex',
+          dispStr: 'disp-str',
           atkSkill: 'atk-skill', atkLv: 'atk-lv',
           critthrowLv: 'critthrow-lv', shadowLv: 'shadow-lv',
           masteryLv: 'mastery-lv', mwLv: 'mw-lv', sharp: 'sharp',
@@ -1694,8 +1707,9 @@
       document.getElementById('base-luk').addEventListener('change', e => validateBaseMin(e.target, 'LUK', 13));
       document.getElementById('base-dex').addEventListener('change', e => validateBaseMin(e.target, 'DEX', 4));
 
-      // 레벨 / 스킬 변경 시 재계산
+      // 레벨 / 스킬 / 표기 STR 변경 시 재계산
       document.getElementById('char-level').addEventListener('input', recalc);
+      document.getElementById('disp-str').addEventListener('input', recalc);
       ['atk-lv','critthrow-lv','shadow-lv','mastery-lv','mw-lv'].forEach(id => {
         document.getElementById(id).addEventListener('input', recalc);
       });
@@ -1736,6 +1750,7 @@
           items, loadout, compares,
           baseLuk: +document.getElementById('base-luk').value || 0,
           baseDex: +document.getElementById('base-dex').value || 0,
+          dispStr: +document.getElementById('disp-str').value || 0,
           level: +document.getElementById('char-level').value || 135,
         };
         localStorage.setItem(STORAGE_KEYS.userDefault, JSON.stringify(snapshot));
@@ -1756,6 +1771,7 @@
           compares = s.compares || [];
           if (s.baseLuk) document.getElementById('base-luk').value = s.baseLuk;
           if (s.baseDex) document.getElementById('base-dex').value = s.baseDex;
+          if (s.dispStr != null) document.getElementById('disp-str').value = s.dispStr;
           if (s.level) document.getElementById('char-level').value = s.level;
           save();
         } else {
