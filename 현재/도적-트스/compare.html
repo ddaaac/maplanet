@@ -1,0 +1,1779 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>메이플 플래닛 — 도적 트스 환산</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", sans-serif;
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900 min-h-screen">
+    <!-- Top header -->
+    <header class="bg-white border-b border-slate-200">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-orange-500 text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+            <path d="M12 2l2.39 7.36H22l-6.18 4.49L18.21 22 12 17.27 5.79 22l2.39-8.15L2 9.36h7.61L12 2z"/>
+          </svg>
+        </span>
+        <h1 class="text-lg sm:text-xl font-bold">메이플 플래닛 환산 (도적 트스)</h1>
+      </div>
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <nav class="flex gap-6 text-sm">
+          <button type="button" data-tab="calc" class="tab-btn relative py-3 font-semibold text-slate-900">
+            환산
+            <span class="absolute left-0 right-0 bottom-0 h-0.5 bg-orange-500 tab-underline"></span>
+          </button>
+          <button type="button" data-tab="cmp" class="tab-btn relative py-3 font-medium text-slate-500 hover:text-slate-900">
+            비교
+            <span class="absolute left-0 right-0 bottom-0 h-0.5 bg-orange-500 tab-underline hidden"></span>
+          </button>
+          <button type="button" data-tab="items" class="tab-btn relative py-3 font-medium text-slate-500 hover:text-slate-900">
+            아이템 관리
+            <span class="absolute left-0 right-0 bottom-0 h-0.5 bg-orange-500 tab-underline hidden"></span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 sm:p-6">
+      <!-- ===================== 환산 탭 ===================== -->
+      <div data-panel="calc" class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
+        <div class="space-y-3">
+          <!-- 캐릭터 (컴팩트) -->
+          <section class="bg-white rounded-lg border border-slate-200 px-3 py-2">
+            <div class="grid grid-cols-4 gap-2 items-end">
+              <label class="text-xs">
+                <span class="text-slate-500">직업</span>
+                <div class="mt-0.5 px-2 py-1 border border-slate-200 bg-slate-50 rounded text-sm font-medium">도적</div>
+              </label>
+              <label class="text-xs">
+                <span class="text-slate-500">레벨</span>
+                <input type="number" id="char-level" value="135" min="1" max="200"
+                  class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
+              </label>
+              <label class="text-xs">
+                <span class="text-slate-500">순수 LUK</span>
+                <input type="number" id="base-luk" value="578"
+                  class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
+              </label>
+              <label class="text-xs">
+                <span class="text-slate-500">순수 DEX</span>
+                <input type="number" id="base-dex" value="69"
+                  class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
+              </label>
+            </div>
+          </section>
+
+          <!-- 현재 장비 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-sm mb-2">현재 장비</h2>
+            <div id="loadout-grid" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-x-2 gap-y-1.5"></div>
+          </section>
+
+
+          <!-- 부스탯 요구치 알림 -->
+          <section id="reqdex-section" class="hidden bg-white rounded-lg border border-rose-200 p-3">
+            <h2 class="font-semibold text-sm mb-2 flex items-center gap-2">
+              <span class="inline-block w-1 h-3 bg-rose-500 rounded"></span>
+              부스탯 (DEX) 요구치
+            </h2>
+            <div id="reqdex-content" class="space-y-2 text-xs"></div>
+          </section>
+
+          <!-- 스탯 환산 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <div class="flex items-center justify-between mb-1.5">
+              <h2 class="font-semibold text-sm flex items-center gap-2">
+                <span class="inline-block w-1 h-3 bg-violet-500 rounded"></span>
+                스탯 환산
+              </h2>
+              <div class="text-[10px] text-slate-500">
+                현재 LUK <strong id="cv-luk" class="text-slate-800 font-mono">0</strong>
+              </div>
+            </div>
+            <div class="text-[10px] text-slate-400 mb-2">장비 LUK 기준 · 깡 LUK 1 증가시 최종 LUK <span id="cv-perluk" class="font-mono font-semibold text-slate-700">0</span> 상승</div>
+            <div id="convert-list" class="space-y-1"></div>
+            <div class="text-[9px] text-slate-400 mt-1.5">옵션 1단위가 깡 LUK 몇과 같은 데미지 효과인지 환산. 현재 셋업 + 스킬/버프 기준.</div>
+          </section>
+        </div>
+
+        <!-- Right: 결과 + 옵션 -->
+        <aside class="space-y-3">
+          <section class="bg-white rounded-lg border border-slate-200 p-4">
+            <div class="text-[10px] text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+              <span>실제 데미지 (사이클 합 — 쉐파 포함)</span>
+              <span class="text-slate-400 normal-case" id="r-skill-label">트스 3타</span>
+              <span id="r-sharp-info" class="text-[9px] px-1 py-0.5 rounded font-semibold normal-case"></span>
+              <span class="relative group inline-block">
+                <button type="button" tabindex="0"
+                  class="w-3.5 h-3.5 inline-flex items-center justify-center rounded-full bg-slate-200 text-slate-600 text-[9px] font-bold leading-none cursor-help"
+                  aria-label="공식 보기">i</button>
+                <span class="absolute right-0 top-full mt-1 z-20 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[10px] leading-relaxed rounded p-2 w-80 shadow-lg whitespace-normal font-normal normal-case">
+                  <strong class="text-orange-300">럭키 세븐 / 트리플 스로우 특수 공식</strong><br>
+                  <code class="text-orange-200">한 타격 최대값 = LUK × 5.0 × 무기공격력 / 100 × 스킬데미지%</code><br>
+                  <code class="text-orange-200">한 타격 최소값 = LUK × 2.5 × 무기공격력 / 100 × 스킬데미지%</code><br><br>
+                  <strong>크리티컬</strong>: 한 크리당 추가 데미지 = (10 + 3×크리티컬 스로우 레벨) + (샤프 켰을 때 +100 + 샤프 크리데미지%)<br>
+                  크리 타격 = 일반 타격 × (1 + 한 크리당 추가 데미지 / 100)<br><br>
+                  <strong>한 사이클</strong> = 한 타격 × 타수 × 쉐도우 파트너(1 + 스킬데미지%) × (1 + 총 데미지%) × (보스전이면 1 + 보스 데미지%)<br><br>
+                  <strong>기댓값</strong> = (1 − 크리확률) × 일반 평균 + 크리확률 × 크리 평균<br><br>
+                  <strong class="text-orange-300">1타 데미지</strong> = 쉐도우 파트너 / 타수 제외 (인게임 데미지 숫자랑 매칭하려고)<br>
+                  표창 마스터리는 적용 안 됨 (특수 공식 자체에 최대/최소 변동 내장)
+                </span>
+              </span>
+            </div>
+            <div class="space-y-1.5">
+              <div class="bg-slate-50 rounded px-2 py-1.5">
+                <div class="text-[10px] text-slate-500">크리 ✗ (모두 일반)</div>
+                <div id="r-trs-nocrit" class="font-mono text-base font-bold text-slate-700">0 ~ 0</div>
+              </div>
+              <div class="bg-slate-50 rounded px-2 py-1.5">
+                <div class="text-[10px] text-slate-500">크리 ✓ (모두 크리)</div>
+                <div id="r-trs-crit" class="font-mono text-base font-bold text-slate-700">0 ~ 0</div>
+              </div>
+              <div class="bg-blue-50 rounded px-2 py-1.5">
+                <div class="text-[10px] text-blue-600 font-semibold">기댓값 (사이클 평균)</div>
+                <div id="r-trs-exp" class="font-mono text-lg font-bold text-blue-600">0</div>
+              </div>
+
+              <!-- 1타 데미지 (쉐파 X) — 인게임 검증용 -->
+              <div class="border-t border-slate-100 pt-1.5 mt-1.5">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">1타 데미지 <span class="text-slate-400 normal-case">(쉐파 미적용 · 인게임 데미지 숫자랑 매칭)</span></div>
+                <div class="grid grid-cols-2 gap-1.5">
+                  <div class="bg-slate-50 rounded px-2 py-1">
+                    <div class="text-[9px] text-slate-500">일반</div>
+                    <div id="r-1hit-nocrit" class="font-mono text-xs font-semibold text-slate-700">0 ~ 0</div>
+                  </div>
+                  <div class="bg-slate-50 rounded px-2 py-1">
+                    <div class="text-[9px] text-slate-500">크리</div>
+                    <div id="r-1hit-crit" class="font-mono text-xs font-semibold text-slate-700">0 ~ 0</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-[10px] text-slate-400 text-right">퍼댐(기댓값) <span id="r-pct">0%</span></div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-1.5 mt-3 pt-3 border-t border-slate-100 text-xs">
+              <div class="bg-slate-50 rounded px-2 py-1.5">
+                <div class="text-[10px] text-slate-500">LUK</div>
+                <div id="r-luk" class="font-mono font-semibold">0</div>
+              </div>
+              <div class="bg-slate-50 rounded px-2 py-1.5">
+                <div class="text-[10px] text-slate-500">DEX</div>
+                <div id="r-dex" class="font-mono font-semibold">0</div>
+              </div>
+              <div class="bg-slate-50 rounded px-2 py-1.5 relative">
+                <div class="text-[10px] text-slate-500 flex items-center gap-1">
+                  무공
+                  <span class="relative group inline-block">
+                    <button type="button" tabindex="0"
+                      class="w-3 h-3 inline-flex items-center justify-center rounded-full bg-slate-300 text-slate-700 text-[8px] font-bold leading-none cursor-help"
+                      aria-label="무공 설명">i</button>
+                    <span class="absolute left-0 top-full mt-1 z-30 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[10px] leading-relaxed rounded p-2 w-64 shadow-lg whitespace-normal font-normal">
+                      <strong class="text-orange-300">무기공격력 (WA)</strong><br>
+                      데미지 공식의 "공격력" 합산값.<br><br>
+                      <code class="text-orange-200">= floor(무기 깡공 × (1 + 공격력%/100))<br>+ 표창 공격력 + 장갑 공격력<br>+ 혼테일(+30)</code><br><br>
+                      공격력%는 무기 깡공에만 적용. 표창/장갑/버프는 따로 더해짐.
+                    </span>
+                  </span>
+                </div>
+                <div id="r-wa" class="font-mono font-semibold">0</div>
+              </div>
+              <div class="bg-orange-50 rounded px-2 py-1.5 relative">
+                <div class="text-[10px] text-orange-600 flex items-center gap-1">
+                  스공
+                  <span class="relative group inline-block">
+                    <button type="button" tabindex="0"
+                      class="w-3 h-3 inline-flex items-center justify-center rounded-full bg-orange-200 text-orange-700 text-[8px] font-bold leading-none cursor-help"
+                      aria-label="스공 설명">i</button>
+                    <span class="absolute right-0 top-full mt-1 z-30 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[10px] leading-relaxed rounded p-2 w-64 shadow-lg whitespace-normal font-normal">
+                      <strong class="text-orange-300">스탯공격력 (스공)</strong><br>
+                      도적 표창 일반 공격력 MAX (사이트 표시값).<br><br>
+                      <code class="text-orange-200">스공 = (LUK × 3.6 + DEX) × 무기공격력 / 100</code><br><br>
+                      참고용. <strong>럭키 세븐 / 트리플 스로우는 이 값 안 쓰고 LUK × 5 특수 공식 사용.</strong><br>
+                      어벤저/드레인 같은 일반 스킬은 이 값에 스킬%만 곱하면 됨.
+                    </span>
+                  </span>
+                </div>
+                <div id="r-stat" class="font-mono font-bold text-orange-600">0</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 스킬 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
+              <span class="inline-block w-1 h-3 bg-emerald-500 rounded"></span>
+              스킬
+            </h2>
+            <div class="space-y-1.5 text-xs">
+              <!-- 공격 스킬 -->
+              <div class="bg-slate-50 rounded p-1.5 space-y-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-slate-700 font-semibold w-14">공격</span>
+                  <select id="atk-skill" class="flex-1 px-1.5 py-0.5 border border-slate-300 rounded text-xs">
+                    <option value="trs">트리플 스로우 (3타)</option>
+                    <option value="ls">럭키 세븐 (2타)</option>
+                  </select>
+                </div>
+                <div class="flex items-center gap-1.5 pl-[60px]">
+                  <span class="text-slate-500">Lv</span>
+                  <input type="number" id="atk-lv" value="30" min="1" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                  <button type="button" data-max-btn="atk" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                  <span class="text-[10px] text-slate-400" id="atk-info">—</span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 w-16">크리스로우</span>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="critthrow-lv" value="30" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <button type="button" data-max-btn="critthrow" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                <span class="text-[10px] text-slate-400" id="critthrow-info">—</span>
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 w-16">쉐파</span>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="shadow-lv" value="30" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <button type="button" data-max-btn="shadow" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                <span class="text-[10px] text-slate-400" id="shadow-info">—</span>
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 w-16">마스터리</span>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="mastery-lv" value="20" min="0" max="20" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <button type="button" data-max-btn="mastery" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                <span class="text-[10px] text-slate-400" id="mastery-info">—</span>
+              </div>
+
+              <div class="flex items-center gap-1.5 pt-1 mt-1 border-t border-slate-100">
+                <span class="text-slate-700 font-semibold w-16">메용</span>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="mw-lv" value="0" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <button type="button" data-max-btn="mw" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                <span class="text-[10px] text-slate-400" id="mw-info">없음</span>
+                <span class="relative group inline-block ml-auto">
+                  <button type="button" tabindex="0"
+                    class="w-3.5 h-3.5 inline-flex items-center justify-center rounded-full bg-slate-200 text-slate-600 text-[9px] font-bold leading-none cursor-help"
+                    aria-label="메용 설명">i</button>
+                  <span class="absolute right-0 top-full mt-1 z-30 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[10px] leading-relaxed rounded p-2 w-72 shadow-lg whitespace-normal font-normal normal-case">
+                    <strong class="text-orange-300">메이플 용사</strong><br>
+                    Lv N → 모든 스탯 +<code class="text-orange-200">ceil(N/2)</code>%<br>
+                    <strong>순수 AP 만 boost</strong> — base LUK/DEX × % (floor)<br>
+                    장비 깡 스탯은 영향 X<br><br>
+                    <strong class="text-orange-300">부스탯 cycle</strong>: 메용 boost 후 totalDEX 계산 → 요구 DEX 미달 아이템 모든 스탯 비활성 → 재계산 반복. 비활성 장비는 빨갛게 표시됨.<br><br>
+                    버프 해제 시 활성화된 장비도 같이 비활성 (in-game).
+                  </span>
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <!-- 버프 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
+              <span class="inline-block w-1 h-3 bg-amber-500 rounded"></span>
+              버프
+            </h2>
+            <div class="space-y-1.5 text-xs">
+              <label class="flex items-center gap-2">
+                <span class="text-slate-700 w-12">샤프</span>
+                <select id="sharp" class="flex-1 px-2 py-1 border border-slate-300 rounded text-xs">
+                  <option value="none">없음</option>
+                  <option value="usable">쓸샾 (10%/+15%)</option>
+                  <option value="max">만렙 (15%/+40%)</option>
+                </select>
+              </label>
+              <label class="flex items-center gap-1.5">
+                <input type="checkbox" id="horntail" checked>
+                <span class="text-slate-700">혼테일 <span class="text-slate-400">(+30 공)</span></span>
+              </label>
+              <label class="flex items-center gap-1.5">
+                <input type="checkbox" id="boss-mode">
+                <span class="text-slate-700">보스전 <span class="text-slate-400">(보공 적용)</span></span>
+              </label>
+            </div>
+          </section>
+
+          <!-- 총 스탯 통계 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
+              <span class="inline-block w-1 h-3 bg-blue-500 rounded"></span>
+              총 스탯 통계
+            </h2>
+            <div class="space-y-2">
+              <div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">주스탯 / 부스탯</div>
+                <div id="summary-stat" class="grid grid-cols-4 gap-1.5"></div>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">공격력 <span class="text-orange-500">공%O</span> / <span class="text-slate-600">공%X</span></div>
+                <div id="summary-atk" class="grid grid-cols-3 gap-1.5"></div>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">무기 잠재</div>
+                <div id="summary-pot" class="grid grid-cols-4 gap-1.5"></div>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <!-- ===================== 비교 탭 ===================== -->
+      <div data-panel="cmp" class="hidden grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
+        <div class="space-y-3">
+          <!-- 비교 프리셋 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="font-semibold text-sm">비교 프리셋</h2>
+              <button type="button" id="add-preset" class="text-xs px-3 py-1 rounded bg-orange-500 text-white hover:bg-orange-600">+ 프리셋 추가</button>
+            </div>
+            <div id="preset-list" class="space-y-3"></div>
+            <p class="text-xs text-slate-400 mt-2">프리셋마다 이름 + 여러 슬롯 교체 + 캐릭터/스킬/버프 캡쳐. 결과는 우측에 표시.</p>
+          </section>
+        </div>
+
+        <aside class="space-y-3">
+          <!-- 비교 결과 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
+              <span class="inline-block w-1 h-3 bg-orange-500 rounded"></span>
+              비교 결과
+            </h2>
+            <div id="compare-results" class="space-y-1.5"></div>
+          </section>
+        </aside>
+      </div>
+
+      <!-- ===================== 아이템 관리 탭 ===================== -->
+      <div data-panel="items" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- 아이템 만들기 -->
+        <section class="bg-white rounded-lg border border-slate-200 p-4">
+          <h2 class="font-semibold text-sm mb-3" id="form-title">새 아이템</h2>
+          <div class="space-y-2">
+            <div class="grid grid-cols-2 gap-2">
+              <label class="text-xs"><span class="text-slate-600">슬롯</span>
+                <select id="f-slot" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm">
+                  <option value="무기" selected>무기</option>
+                  <option value="표창">표창</option>
+                  <option value="모자">모자</option>
+                  <option value="상의">상의</option>
+                  <option value="하의">하의</option>
+                  <option value="신발">신발</option>
+                  <option value="방패">방패</option>
+                  <option value="장갑">장갑</option>
+                  <option value="귀고리">귀고리</option>
+                  <option value="망토">망토</option>
+                  <option value="목걸이">목걸이</option>
+                  <option value="안경">안경</option>
+                  <option value="반지">반지</option>
+                  <option value="벨트">벨트</option>
+                  <option value="훈장">훈장</option>
+                </select>
+              </label>
+              <label class="text-xs"><span class="text-slate-600">이름</span>
+                <input type="text" id="f-name" placeholder="예: 빠삐31세트모자" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm">
+              </label>
+            </div>
+            <div id="f-preset-wrap" class="hidden">
+              <label class="text-xs"><span class="text-slate-600">프리셋 불러오기</span>
+                <select id="f-preset" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm">
+                  <option value="">(직접 입력)</option>
+                </select>
+              </label>
+            </div>
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              <label class="text-xs"><span class="text-slate-600">LUK</span>
+                <input type="number" id="f-luk" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+              </label>
+              <label class="text-xs"><span class="text-slate-600">DEX</span>
+                <input type="number" id="f-dex" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+              </label>
+              <label class="text-xs"><span class="text-slate-600">올스탯</span>
+                <input type="number" id="f-allstat" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+              </label>
+              <label class="text-xs"><span class="text-slate-600">공격력</span>
+                <input type="number" id="f-atk" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+              </label>
+              <label class="text-xs"><span class="text-slate-600">LUK %</span>
+                <input type="number" id="f-lukp" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+              </label>
+              <label class="text-xs"><span class="text-slate-600">DEX %</span>
+                <input type="number" id="f-dexp" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+              </label>
+              <label class="text-xs"><span class="text-slate-600">올스탯%</span>
+                <input type="number" id="f-allstatp" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+              </label>
+              <label class="text-xs col-span-2"><span class="text-slate-600">요구 DEX <span class="text-slate-400">(부스탯 미달 시 비활성)</span></span>
+                <input type="number" id="f-reqdex" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+              </label>
+            </div>
+            <div id="f-weapon-only" class="hidden bg-orange-50 rounded p-2">
+              <div class="text-xs font-semibold text-orange-700 mb-1">무기 전용 잠재</div>
+              <div class="grid grid-cols-4 gap-2">
+                <label class="text-xs"><span class="text-slate-600">공%</span>
+                  <input type="number" id="f-atkp" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+                </label>
+                <label class="text-xs"><span class="text-slate-600">총뎀%</span>
+                  <input type="number" id="f-totaldmg" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+                </label>
+                <label class="text-xs"><span class="text-slate-600">크확%</span>
+                  <input type="number" id="f-critrate" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+                </label>
+                <label class="text-xs"><span class="text-slate-600">보공%</span>
+                  <input type="number" id="f-bossdmg" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
+                </label>
+              </div>
+            </div>
+            <div id="f-extra" class="hidden bg-slate-50 rounded p-2">
+              <label class="text-xs flex items-center gap-1">
+                <input type="checkbox" id="f-sseulshap"> <span class="text-slate-600">쓸샾 포함 (장갑 한정 — 크확 +10, 크댐 +15)</span>
+              </label>
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button type="button" id="f-save" class="flex-1 px-4 py-2 rounded bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600">저장</button>
+              <button type="button" id="f-clear" class="px-4 py-2 rounded bg-slate-200 text-slate-700 text-sm hover:bg-slate-300">초기화</button>
+            </div>
+            <input type="hidden" id="f-id">
+          </div>
+        </section>
+
+        <!-- 저장된 아이템 목록 -->
+        <section class="bg-white rounded-lg border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-semibold text-sm">저장된 아이템</h2>
+            <div class="flex items-center gap-2">
+              <span id="item-count" class="text-xs text-slate-500">0개</span>
+              <button type="button" id="save-default"
+                class="text-[10px] px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100">현재 상태를 기본값으로</button>
+              <button type="button" id="reset-data"
+                class="text-[10px] px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100">데이터 리셋</button>
+            </div>
+          </div>
+          <div id="item-list" class="space-y-1 max-h-[600px] overflow-y-auto"></div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      // ============== State ==============
+      const SLOTS = ['무기','표창','모자','상의','하의','신발','장갑','귀고리','망토','목걸이','훈장','방패','반지'];
+      const STORAGE_KEYS = { items: 'mp_items_v1', loadout: 'mp_loadout_v1', compares: 'mp_compares_v1', config: 'mp_config_v1', userDefault: 'mp_userdefault_v1', basePreset: 'mp_basepreset_v1' };
+
+      let items = JSON.parse(localStorage.getItem(STORAGE_KEYS.items) || '[]');
+      let loadout = JSON.parse(localStorage.getItem(STORAGE_KEYS.loadout) || '{}'); // {slot: itemId}
+      let compares = JSON.parse(localStorage.getItem(STORAGE_KEYS.compares) || '[]');
+      // 프리셋 구조 마이그레이션
+      //   현재 포맷: { id, name, snapshot: null | { ...opts, loadout: {slot:id} } }
+      //   구 포맷 변환: swaps[] → snapshot.loadout 으로 흡수. snapshot 옵션 부분도 그대로.
+      if (compares.length > 0 && !('swaps' in compares[0]) && !('snapshot' in compares[0])) compares = [];
+      compares.forEach(c => {
+        if (!('snapshot' in c)) c.snapshot = null;
+        if (c.swaps) {
+          const swapMap = {};
+          c.swaps.forEach(s => { if (s.newId) swapMap[s.slot] = s.newId; });
+          if (Object.keys(swapMap).length > 0) {
+            // swap 이 있던 프리셋 → 현재 loadout + swap overlay 로 loadout 박기
+            const presetLoadout = { ...loadout, ...swapMap };
+            if (c.snapshot) {
+              c.snapshot.loadout = c.snapshot.loadout || presetLoadout;
+            } else {
+              c.snapshot = { loadout: presetLoadout };
+            }
+          }
+          delete c.swaps;
+        }
+        // snapshot 있는데 loadout 누락된 경우 (예: 옵션만 캡쳐된 프리셋)
+        if (c.snapshot && !c.snapshot.loadout) c.snapshot.loadout = { ...loadout };
+      });
+      save(); // 마이그레이션 결과 저장
+
+      // 캐릭터/스킬/버프 설정 (level 포함). 페이지 로드 시 input 에 반영.
+      const savedConfig = JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}');
+      // 비교 기준 프리셋 id (null 이면 현재 셋업이 기준)
+      let basePresetId = localStorage.getItem(STORAGE_KEYS.basePreset) || null;
+
+      function save() {
+        localStorage.setItem(STORAGE_KEYS.items, JSON.stringify(items));
+        localStorage.setItem(STORAGE_KEYS.loadout, JSON.stringify(loadout));
+        localStorage.setItem(STORAGE_KEYS.compares, JSON.stringify(compares));
+      }
+
+      // 첫 진입 시 기본 시드 (사용자 현재 장비)
+      function seedDefaults() {
+        const mkId = () => String(Date.now()) + Math.random().toString(16).slice(2, 8);
+        const seeds = [
+          { slot: '무기',   name: '아대',      atk: 87, luk: 11, atkp: 9 },
+          { slot: '표창',   name: '뇌전수리검+25', atk: 25 },
+          { slot: '모자',   name: '12%모자',  luk: 24, dex: 11, lukp: 12, dexp: 4 },
+          { slot: '상의',   name: '15%상의',  luk: 18, dex: 3,  lukp: 15 },
+          { slot: '하의',   name: '6%하의',   luk: 20, dex: 9,  lukp: 6 },
+          { slot: '신발',   name: '15%신발',  luk: 2,  dex: 14, lukp: 15 },
+          { slot: '장갑',   name: '9%장갑',   luk: 16, dex: 6,  lukp: 9, allstatp: 6, atk: 8 },
+          { slot: '귀고리', name: '21%귀고리', luk: 0,  dex: 5,  lukp: 21 },
+          { slot: '망토',   name: '21%망토',   luk: 0,  dex: 6,  lukp: 21 },
+          { slot: '목걸이', name: '인두',      luk: 10, lukp: 4, allstatp: 2 },
+          { slot: '훈장',   name: '마스터훈장', luk: 2,  dex: 2 },
+        ];
+        items = seeds.map(s => ({
+          id: mkId(),
+          slot: s.slot,
+          name: s.name,
+          luk: s.luk || 0,
+          dex: s.dex || 0,
+          allstat: s.allstat || 0,
+          atk: s.atk || 0,
+          lukp: s.lukp || 0,
+          dexp: s.dexp || 0,
+          allstatp: s.allstatp || 0,
+          atkp: s.atkp || 0,
+          reqDex: s.reqDex || 0,
+          sseulshap: false,
+        }));
+        // 자동 장착: 슬롯에 단 하나뿐인 아이템 자동 셋팅
+        loadout = {};
+        items.forEach(it => { loadout[it.slot] = it.id; });
+        save();
+      }
+      if (items.length === 0) seedDefaults();
+
+      // ============== 탭 ==============
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.tab;
+          document.querySelectorAll('.tab-btn').forEach(b => {
+            const active = b.dataset.tab === target;
+            b.className = active
+              ? 'tab-btn relative py-3 font-semibold text-slate-900'
+              : 'tab-btn relative py-3 font-medium text-slate-500 hover:text-slate-900';
+            const ul = b.querySelector('.tab-underline');
+            if (ul) ul.classList.toggle('hidden', !active);
+            if (!ul && active) {
+              const span = document.createElement('span');
+              span.className = 'absolute left-0 right-0 bottom-0 h-0.5 bg-orange-500 tab-underline';
+              b.appendChild(span);
+            }
+          });
+          document.querySelectorAll('[data-panel]').forEach(p => {
+            p.classList.toggle('hidden', p.dataset.panel !== target);
+          });
+        });
+      });
+
+      // ============== 아이템 폼 ==============
+      const fSlot = document.getElementById('f-slot');
+      const fExtra = document.getElementById('f-extra');
+      const fPresetWrap = document.getElementById('f-preset-wrap');
+      const fPresetSel = document.getElementById('f-preset');
+
+      // 도적 무기 (아대 / 클로) / 표창 프리셋
+      // 메이플 플래닛 / 본점 빅뱅전 기준 대표 매물 (수치는 대략값 — 너가 갖고 있는 거에 맞게 수정해)
+      const PRESETS = {
+        '무기': [
+          { name: '아대 (Lv50)',          atk: 30 },
+          { name: '카잘 아대 (Lv64)',      atk: 50 },
+          { name: '아라니아 아대 (Lv70)',   atk: 55 },
+          { name: '핑크빈 아대 (Lv80)',    atk: 60,  luk: 5 },
+          { name: '카오스 아대 (Lv90)',    atk: 76,  luk: 3 },
+          { name: '황무지 아대 (Lv100)',   atk: 87 },
+          { name: '코코넛 아대 (Lv110)',   atk: 92 },
+          { name: '카리니아 아대 (Lv120)', atk: 99, luk: 10 },
+          { name: '일심 아대 (Lv130)',     atk: 105, luk: 5, dex: 5 },
+        ],
+        '표창': [
+          { name: '일반 수리검 +10',  atk: 10 },
+          { name: '강화 수리검 +15',  atk: 15 },
+          { name: '서리 수리검 +20',  atk: 20 },
+          { name: '뇌전 수리검 +25',  atk: 25 },
+          { name: '황금 수리검 +30',  atk: 30 },
+          { name: '일심 수리검 +35',  atk: 35 },
+        ],
+      };
+
+      function fillPresetDropdown() {
+        const slot = fSlot.value;
+        const presets = PRESETS[slot];
+        if (!presets) {
+          fPresetWrap.classList.add('hidden');
+          return;
+        }
+        fPresetWrap.classList.remove('hidden');
+        fPresetSel.innerHTML = '<option value="">(직접 입력)</option>' +
+          presets.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
+      }
+
+      fSlot.addEventListener('change', () => {
+        fExtra.classList.toggle('hidden', fSlot.value !== '장갑');
+        document.getElementById('f-weapon-only').classList.toggle('hidden', fSlot.value !== '무기');
+        fillPresetDropdown();
+      });
+
+      fPresetSel.addEventListener('change', () => {
+        const idx = fPresetSel.value;
+        if (idx === '') return;
+        const slot = fSlot.value;
+        const p = PRESETS[slot]?.[+idx];
+        if (!p) return;
+        document.getElementById('f-name').value = p.name;
+        document.getElementById('f-luk').value = p.luk || '';
+        document.getElementById('f-dex').value = p.dex || '';
+        document.getElementById('f-allstat').value = p.allstat || '';
+        document.getElementById('f-atk').value = p.atk || '';
+        document.getElementById('f-lukp').value = p.lukp || '';
+        document.getElementById('f-dexp').value = p.dexp || '';
+        document.getElementById('f-allstatp').value = p.allstatp || '';
+        document.getElementById('f-atkp').value = p.atkp || '';
+      });
+
+      // 초기 프리셋 dropdown + 무기 전용 칸
+      fillPresetDropdown();
+      document.getElementById('f-weapon-only').classList.toggle('hidden', fSlot.value !== '무기');
+
+      function readForm() {
+        const isWeapon = fSlot.value === '무기';
+        return {
+          id: document.getElementById('f-id').value || null,
+          slot: fSlot.value,
+          name: document.getElementById('f-name').value.trim() || '(이름 없음)',
+          luk: +document.getElementById('f-luk').value || 0,
+          dex: +document.getElementById('f-dex').value || 0,
+          allstat: +document.getElementById('f-allstat').value || 0,
+          atk: +document.getElementById('f-atk').value || 0,
+          lukp: +document.getElementById('f-lukp').value || 0,
+          dexp: +document.getElementById('f-dexp').value || 0,
+          allstatp: +document.getElementById('f-allstatp').value || 0,
+          reqDex: +document.getElementById('f-reqdex').value || 0,
+          // 무기 전용
+          atkp: isWeapon ? (+document.getElementById('f-atkp').value || 0) : 0,
+          totaldmg: isWeapon ? (+document.getElementById('f-totaldmg').value || 0) : 0,
+          critrate: isWeapon ? (+document.getElementById('f-critrate').value || 0) : 0,
+          bossdmg: isWeapon ? (+document.getElementById('f-bossdmg').value || 0) : 0,
+          // 장갑 전용
+          sseulshap: fSlot.value === '장갑' ? document.getElementById('f-sseulshap').checked : false,
+        };
+      }
+      function clearForm() {
+        document.getElementById('f-id').value = '';
+        document.getElementById('f-name').value = '';
+        ['f-luk','f-dex','f-allstat','f-atk','f-lukp','f-dexp','f-allstatp','f-atkp','f-totaldmg','f-critrate','f-bossdmg','f-reqdex'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('f-sseulshap').checked = false;
+        document.getElementById('form-title').textContent = '새 아이템';
+        fPresetSel.value = '';
+      }
+      function loadToForm(it) {
+        document.getElementById('f-id').value = it.id;
+        fSlot.value = it.slot;
+        fExtra.classList.toggle('hidden', it.slot !== '장갑');
+        document.getElementById('f-weapon-only').classList.toggle('hidden', it.slot !== '무기');
+        fillPresetDropdown();
+        document.getElementById('f-name').value = it.name;
+        document.getElementById('f-luk').value = it.luk || '';
+        document.getElementById('f-dex').value = it.dex || '';
+        document.getElementById('f-allstat').value = it.allstat || '';
+        document.getElementById('f-atk').value = it.atk || '';
+        document.getElementById('f-lukp').value = it.lukp || '';
+        document.getElementById('f-dexp').value = it.dexp || '';
+        document.getElementById('f-allstatp').value = it.allstatp || '';
+        document.getElementById('f-atkp').value = it.atkp || '';
+        document.getElementById('f-totaldmg').value = it.totaldmg || '';
+        document.getElementById('f-critrate').value = it.critrate || '';
+        document.getElementById('f-bossdmg').value = it.bossdmg || '';
+        document.getElementById('f-reqdex').value = it.reqDex || '';
+        document.getElementById('f-sseulshap').checked = !!it.sseulshap;
+        document.getElementById('form-title').textContent = `편집: ${it.name}`;
+      }
+
+      document.getElementById('f-save').addEventListener('click', () => {
+        const it = readForm();
+        if (it.id) {
+          items = items.map(x => x.id === it.id ? it : x);
+        } else {
+          it.id = String(Date.now()) + Math.random().toString(16).slice(2);
+          items.push(it);
+        }
+        save();
+        clearForm();
+        renderItemList();
+        renderLoadout();
+        renderCompareList();
+      });
+      document.getElementById('f-clear').addEventListener('click', clearForm);
+
+      function renderItemList() {
+        const ul = document.getElementById('item-list');
+        ul.innerHTML = '';
+        document.getElementById('item-count').textContent = `${items.length}개`;
+        if (items.length === 0) {
+          ul.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">저장된 아이템 없음. 왼쪽에서 만들어보세요.</p>';
+          return;
+        }
+        // group by slot
+        const bySlot = {};
+        items.forEach(it => { (bySlot[it.slot] ||= []).push(it); });
+        SLOTS.forEach(slot => {
+          if (!bySlot[slot]) return;
+          const h = document.createElement('div');
+          h.className = 'text-xs font-semibold text-slate-500 mt-2 mb-1';
+          h.textContent = slot;
+          ul.appendChild(h);
+          bySlot[slot].forEach(it => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2 px-2 py-1.5 rounded bg-slate-50 hover:bg-slate-100 text-xs';
+            row.innerHTML = `
+              <div class="flex-1 min-w-0">
+                <div class="font-semibold text-slate-800 truncate">${it.name}${it.sseulshap ? ' <span class="text-orange-500">[쓸샾]</span>' : ''}</div>
+                <div class="text-slate-500 text-[10px]">${itemSummary(it)}</div>
+              </div>
+              <button class="text-blue-600 hover:underline" data-act="edit" data-id="${it.id}">편집</button>
+              <button class="text-red-500 hover:underline" data-act="del" data-id="${it.id}">삭제</button>
+            `;
+            ul.appendChild(row);
+          });
+        });
+        ul.querySelectorAll('[data-act="edit"]').forEach(b => b.addEventListener('click', () => {
+          const it = items.find(x => x.id === b.dataset.id);
+          if (it) loadToForm(it);
+        }));
+        ul.querySelectorAll('[data-act="del"]').forEach(b => b.addEventListener('click', () => {
+          if (!confirm('삭제할까?')) return;
+          items = items.filter(x => x.id !== b.dataset.id);
+          // also unequip / un-compare
+          Object.keys(loadout).forEach(s => { if (loadout[s] === b.dataset.id) delete loadout[s]; });
+          compares = compares.filter(c => c.newId !== b.dataset.id);
+          save();
+          renderItemList();
+          renderLoadout();
+          renderCompareList();
+          recalc();
+        }));
+      }
+
+      function itemSummary(it) {
+        const parts = [];
+        if (it.luk) parts.push(`LUK ${it.luk}`);
+        if (it.dex) parts.push(`DEX ${it.dex}`);
+        if (it.allstat) parts.push(`올 ${it.allstat}`);
+        if (it.lukp) parts.push(`LUK% ${it.lukp}`);
+        if (it.dexp) parts.push(`DEX% ${it.dexp}`);
+        if (it.allstatp) parts.push(`올% ${it.allstatp}`);
+        if (it.atk) parts.push(`공 ${it.atk}`);
+        if (it.atkp) parts.push(`공% ${it.atkp}`);
+        if (it.reqDex) parts.push(`<span class="text-rose-600">요구DEX ${it.reqDex}</span>`);
+        return parts.join(' / ') || '-';
+      }
+
+      // ============== 장비 슬롯 dropdown ==============
+      function renderLoadout() {
+        const grid = document.getElementById('loadout-grid');
+        grid.innerHTML = '';
+        SLOTS.forEach(slot => {
+          const wrap = document.createElement('label');
+          wrap.className = 'flex flex-col min-w-0';
+          const cur = loadout[slot] || '';
+          const opts = items.filter(i => i.slot === slot)
+            .map(i => `<option value="${i.id}" ${i.id === cur ? 'selected' : ''}>${i.name}${i.sseulshap ? '★' : ''}</option>`).join('');
+          wrap.innerHTML = `
+            <span class="text-[10px] text-slate-500 leading-tight">${slot}</span>
+            <select data-slot="${slot}" class="loadout-sel w-full px-1.5 py-1 border border-slate-200 rounded text-xs truncate">
+              <option value="">—</option>
+              ${opts}
+            </select>
+          `;
+          grid.appendChild(wrap);
+        });
+        grid.querySelectorAll('.loadout-sel').forEach(sel => {
+          sel.addEventListener('change', () => {
+            const s = sel.dataset.slot;
+            if (sel.value) loadout[s] = sel.value;
+            else delete loadout[s];
+            save();
+            renderPresetList(); // 프리셋의 "현재" 라벨 갱신
+            recalc();
+          });
+        });
+      }
+
+      // ============== 비교 프리셋 ==============
+      const mkPresetId = () => 'p' + String(Date.now()) + Math.random().toString(16).slice(2, 6);
+
+      function renderPresetList() {
+        const list = document.getElementById('preset-list');
+        list.innerHTML = '';
+        if (compares.length === 0) {
+          list.innerHTML = '<p class="text-xs text-slate-400 py-2 text-center">프리셋 없음. "+ 프리셋 추가" 클릭.</p>';
+          return;
+        }
+        // 비교 대상 결정 (base 가 지정되었으면 그 프리셋, 아니면 현재 셋업)
+        const curOpts = readOpts();
+        let cmpLoadout = loadout;
+        let cmpOpts = curOpts;
+        let cmpLoadoutLabel = '현재 셋업';
+        if (basePresetId) {
+          const bp = compares.find(c => c.id === basePresetId);
+          if (bp && bp.snapshot) {
+            if (bp.snapshot.loadout) cmpLoadout = bp.snapshot.loadout;
+            cmpOpts = { ...curOpts, ...bp.snapshot };
+            cmpLoadoutLabel = bp.name;
+          }
+        }
+
+        compares.forEach((preset) => {
+          const card = document.createElement('div');
+          card.className = 'border border-slate-200 rounded p-2 bg-slate-50/50 space-y-1.5';
+
+          // 스냅샷 chip 렌더 (전체 캡쳐 모델)
+          let snapHtml;
+          if (preset.snapshot) {
+            const s = preset.snapshot;
+            const isBaseSelf = basePresetId === preset.id;
+            const chips = [];
+            // 그룹별 동일 여부 비교 (자기자신 base 면 무조건 표시)
+            const charSame = s.level === cmpOpts.level && s.baseLuk === cmpOpts.baseLuk && s.baseDex === cmpOpts.baseDex;
+            const skillSame = s.atkSkill === cmpOpts.atkSkill && s.atkLv === cmpOpts.atkLv
+              && s.critthrowLv === cmpOpts.critthrowLv && s.shadowLv === cmpOpts.shadowLv
+              && s.masteryLv === cmpOpts.masteryLv && s.mwLv === cmpOpts.mwLv;
+            const buffSame = s.sharp === cmpOpts.sharp && s.horntail === cmpOpts.horntail && s.boss === cmpOpts.boss;
+
+            if (s.level != null && (isBaseSelf || !charSame)) {
+              chips.push(`<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-mono">Lv${s.level} · LUK${s.baseLuk}/DEX${s.baseDex}</span>`);
+            }
+            if (s.atkSkill && (isBaseSelf || !skillSame)) {
+              const atkName = s.atkSkill === 'trs' ? '트스' : '럭세';
+              chips.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-mono">${atkName}${s.atkLv}·크${s.critthrowLv}·쉐${s.shadowLv}·마${s.masteryLv}·메용${s.mwLv}</span>`);
+            }
+            if (s.sharp != null && (isBaseSelf || !buffSame)) {
+              const sharpLabel = s.sharp === 'none' ? '샤프X' : s.sharp === 'usable' ? '쓸샾' : '만샤프';
+              chips.push(`<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-mono">${sharpLabel}${s.horntail?'·혼테':''}${s.boss?'·보스':''}</span>`);
+            }
+            // 장비 chip — base 자기자신이면 전체, 아니면 base 와의 diff 만
+            const lo = s.loadout || {};
+            let equipChipsHtml;
+            if (isBaseSelf) {
+              const all = SLOTS.map(sl => {
+                const id = lo[sl];
+                if (!id) return null;
+                const it = items.find(i => i.id === id);
+                return { slot: sl, name: it ? it.name : '(삭제됨)', missing: !it };
+              }).filter(Boolean);
+              equipChipsHtml = all.length > 0
+                ? `<div class="text-[9px] text-slate-500 mb-0.5">전체 장비 (이 프리셋이 기준)</div>` +
+                  all.map(e => `<span class="px-1.5 py-0.5 rounded ${e.missing ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'} text-[10px] mr-1"><span class="text-slate-400">${e.slot}:</span> ${e.name}</span>`).join('')
+                : '<span class="text-[10px] text-slate-400">장비 없음</span>';
+            } else {
+              const diff = SLOTS.map(sl => {
+                const id = lo[sl];
+                const cmpId = cmpLoadout[sl];
+                if (id === cmpId) return null;
+                const it = id ? items.find(i => i.id === id) : null;
+                const cmpIt = cmpId ? items.find(i => i.id === cmpId) : null;
+                return {
+                  slot: sl,
+                  fromName: cmpIt ? cmpIt.name : '없음',
+                  toName: id ? (it ? it.name : '(삭제됨)') : '없음',
+                  missing: id && !it,
+                };
+              }).filter(Boolean);
+              equipChipsHtml = diff.length > 0
+                ? `<div class="text-[9px] text-slate-500 mb-0.5">vs ${cmpLoadoutLabel} 장비 차이 (${diff.length}개)</div>` +
+                  diff.map(d => `<span class="px-1.5 py-0.5 rounded ${d.missing ? 'bg-rose-100 text-rose-700' : 'bg-orange-50 text-orange-700 border border-orange-200'} text-[10px] mr-1 inline-flex items-center gap-1">
+                    <span class="text-slate-400">${d.slot}:</span>
+                    <span class="text-slate-400 line-through">${d.fromName}</span>
+                    <span>→</span>
+                    <span class="font-semibold">${d.toName}</span>
+                  </span>`).join('')
+                : `<span class="text-[10px] text-slate-400">장비 ${cmpLoadoutLabel}와 동일</span>`;
+            }
+
+            snapHtml = `
+              <div class="pt-1 border-t border-slate-200">
+                <div class="flex flex-wrap gap-1 mb-1.5 items-center">
+                  ${chips.length > 0 ? chips.join('') : (isBaseSelf ? '' : `<span class="text-[10px] text-slate-400">옵션 ${cmpLoadoutLabel}와 동일</span>`)}
+                  <div class="ml-auto flex items-center gap-2">
+                    <button type="button" data-snap-restore="${preset.id}" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-white hover:bg-emerald-600">📥 적용</button>
+                    <button type="button" data-snap-recapture="${preset.id}" class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500 text-white hover:bg-blue-600">📸 재캡쳐</button>
+                    <button type="button" data-snap-clear="${preset.id}" class="text-[10px] text-slate-500 hover:text-rose-600 hover:underline">캡쳐 해제</button>
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-1">${equipChipsHtml}</div>
+              </div>`;
+          } else {
+            snapHtml = `<div class="flex items-center gap-2 pt-1 border-t border-slate-200">
+              <span class="text-[10px] text-slate-400">스냅샷 없음 — 비교 불가</span>
+              <button type="button" data-snap-capture="${preset.id}" class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-blue-500 text-white hover:bg-blue-600">📸 현재 상태 캡쳐 (전체)</button>
+            </div>`;
+          }
+
+          // 기준 (base) 토글
+          const isBase = basePresetId === preset.id;
+          const baseBtnCls = isBase
+            ? 'px-1.5 py-0.5 rounded bg-orange-500 text-white text-[10px] font-semibold'
+            : 'px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 hover:bg-slate-200 text-[10px]';
+          const baseBtnLabel = isBase ? '📌 기준' : '📌 기준 지정';
+
+          card.innerHTML = `
+            <div class="flex gap-2 items-center">
+              <input type="text" data-preset="${preset.id}" data-field="name" value="${preset.name || ''}" placeholder="프리셋 이름"
+                class="flex-1 px-2 py-1 border border-slate-300 rounded text-xs font-semibold">
+              <button type="button" data-base-toggle="${preset.id}" class="${baseBtnCls}">${baseBtnLabel}</button>
+              <button type="button" data-preset-del="${preset.id}" class="text-xs text-red-500 hover:underline">프리셋 삭제</button>
+            </div>
+            ${snapHtml}
+          `;
+          list.appendChild(card);
+        });
+
+        // 이벤트 바인딩
+        list.querySelectorAll('input[data-field="name"]').forEach(inp => {
+          inp.addEventListener('input', () => {
+            const p = compares.find(c => c.id === inp.dataset.preset);
+            if (p) p.name = inp.value;
+            save();
+            recalc();
+          });
+        });
+        // 전체 캡쳐 (loadout + opts)
+        const captureHandler = (presetId) => {
+          const p = compares.find(c => c.id === presetId);
+          if (!p) return;
+          p.snapshot = { ...readOpts(), loadout: { ...loadout } };
+          save();
+          renderPresetList();
+          recalc();
+        };
+        list.querySelectorAll('[data-snap-capture]').forEach(b => b.addEventListener('click', () => captureHandler(b.dataset.snapCapture)));
+        list.querySelectorAll('[data-snap-recapture]').forEach(b => b.addEventListener('click', () => {
+          if (!confirm('현재 상태로 다시 캡쳐할까? (기존 캡쳐 덮어씀)')) return;
+          captureHandler(b.dataset.snapRecapture);
+        }));
+        list.querySelectorAll('[data-snap-clear]').forEach(b => b.addEventListener('click', () => {
+          const p = compares.find(c => c.id === b.dataset.snapClear);
+          if (!p) return;
+          p.snapshot = null;
+          save();
+          renderPresetList();
+          recalc();
+        }));
+        // 📥 복원: 스냅샷 전체 (loadout + 캐릭터/스킬/버프) 를 현재 셋업으로
+        list.querySelectorAll('[data-snap-restore]').forEach(b => b.addEventListener('click', () => {
+          const p = compares.find(c => c.id === b.dataset.snapRestore);
+          if (!p || !p.snapshot) return;
+          if (!confirm(`'${p.name}' 의 캡쳐 상태로 현재 셋업 전체 (장비 + 캐릭터 + 스킬 + 버프) 를 덮어쓸까?`)) return;
+          const s = p.snapshot;
+          const map = {
+            level: 'char-level', baseLuk: 'base-luk', baseDex: 'base-dex',
+            atkSkill: 'atk-skill', atkLv: 'atk-lv',
+            critthrowLv: 'critthrow-lv', shadowLv: 'shadow-lv',
+            masteryLv: 'mastery-lv', mwLv: 'mw-lv', sharp: 'sharp',
+          };
+          Object.entries(map).forEach(([k, id]) => {
+            if (s[k] != null) document.getElementById(id).value = s[k];
+          });
+          if (s.horntail != null) document.getElementById('horntail').checked = s.horntail;
+          if (s.boss != null) document.getElementById('boss-mode').checked = s.boss;
+          if (s.loadout) {
+            loadout = { ...s.loadout };
+            save();
+            renderLoadout();
+          }
+          saveConfig();
+          recalc();
+        }));
+        // 📌 기준 toggle
+        list.querySelectorAll('[data-base-toggle]').forEach(b => b.addEventListener('click', () => {
+          const id = b.dataset.baseToggle;
+          basePresetId = (basePresetId === id) ? null : id;
+          if (basePresetId) localStorage.setItem(STORAGE_KEYS.basePreset, basePresetId);
+          else localStorage.removeItem(STORAGE_KEYS.basePreset);
+          renderPresetList();
+          recalc();
+        }));
+        list.querySelectorAll('select').forEach(sel => {
+          sel.addEventListener('change', () => {
+            const p = compares.find(c => c.id === sel.dataset.preset);
+            if (!p) return;
+            const swap = p.swaps[+sel.dataset.swap];
+            if (!swap) return;
+            swap[sel.dataset.field] = sel.value;
+            if (sel.dataset.field === 'slot') swap.newId = ''; // 슬롯 바뀌면 아이템 reset
+            save();
+            renderPresetList();
+            recalc();
+          });
+        });
+        list.querySelectorAll('[data-add-swap]').forEach(b => b.addEventListener('click', () => {
+          const p = compares.find(c => c.id === b.dataset.preset);
+          if (!p) return;
+          p.swaps = p.swaps || [];
+          p.swaps.push({ slot: '모자', newId: '' });
+          save();
+          renderPresetList();
+          recalc();
+        }));
+        list.querySelectorAll('[data-swap-del]').forEach(b => b.addEventListener('click', () => {
+          const p = compares.find(c => c.id === b.dataset.preset);
+          if (!p) return;
+          p.swaps.splice(+b.dataset.swapDel, 1);
+          save();
+          renderPresetList();
+          recalc();
+        }));
+        list.querySelectorAll('[data-preset-del]').forEach(b => b.addEventListener('click', () => {
+          if (!confirm('이 프리셋 삭제?')) return;
+          compares = compares.filter(c => c.id !== b.dataset.presetDel);
+          save();
+          renderPresetList();
+          recalc();
+        }));
+      }
+      document.getElementById('add-preset').addEventListener('click', () => {
+        // 신규 프리셋은 현재 상태를 자동 캡쳐 (전체 모델 — 캡쳐 없으면 비교 불가)
+        compares.push({
+          id: mkPresetId(),
+          name: `프리셋 ${compares.length + 1}`,
+          snapshot: { ...readOpts(), loadout: { ...loadout } },
+        });
+        save();
+        renderPresetList();
+        recalc();
+      });
+      // 호환성 alias (이전 이름 쓰는 코드가 있을 수 있어서)
+      const renderCompareList = renderPresetList;
+
+      // ============== 계산 공식 ==============
+      // 풀합산 모델 + floor + 도적 표창 일반공격력 공식
+      function computeStats(equip, opts) {
+        // 메용 % = ceil(Lv/2), 순수 AP 만 boost (floor)
+        const mwLv = opts.mwLv || 0;
+        const mwPct = mwLv > 0 ? Math.ceil(mwLv / 2) : 0;
+        const baseLuk = opts.baseLuk + Math.floor(opts.baseLuk * mwPct / 100);
+        const baseDex = opts.baseDex + Math.floor(opts.baseDex * mwPct / 100);
+
+        // 부스탯 cycle (교차활성화 model — 정보글 기준)
+        //   각 장비 활성 조건: (base + 자기 제외 다른 활성 장비 sumDex) × (1 + 활성 장비 dex%+올% / 100) ≥ reqDex
+        //   "자기 자신은 자기 활성에 기여 못 함" — 다른 활성 장비들이 자기를 활성시켜줘야 함 (교차 가능)
+        function simulateCycle(baseAp) {
+          const boostedBase = baseAp + Math.floor(baseAp * mwPct / 100);
+          let act = equip.filter(Boolean);
+          const inactive = new Set();
+          for (let safety = 0; safety < act.length + 2; safety++) {
+            const drop = act.filter(it => {
+              if (!((it.reqDex || 0) > 0)) return false;
+              let sd = 0, sdp = 0, sap = 0;
+              act.forEach(x => {
+                if (x.id === it.id) return;
+                sd += (x.dex || 0) + (x.allstat || 0);
+                sdp += x.dexp || 0;
+                sap += x.allstatp || 0;
+              });
+              const tdWithoutMe = Math.floor((boostedBase + sd) * (1 + (sdp + sap) / 100));
+              return tdWithoutMe < it.reqDex;
+            });
+            if (drop.length === 0) break;
+            drop.forEach(it => inactive.add(it.id));
+            act = act.filter(it => !inactive.has(it.id));
+          }
+          return inactive;
+        }
+
+        // 현재 base 에서의 inactive set
+        const inactiveIds = simulateCycle(opts.baseDex);
+        let active = equip.filter(Boolean).filter(it => !inactiveIds.has(it.id));
+
+        // 활성 아이템만으로 정식 합산
+        let sumLuk = 0, sumDex = 0, sumLukP = 0, sumDexP = 0, sumAllstatP = 0;
+        let sumAtkOther = 0; // 장갑 등 (무기/표창 제외)
+        let sumAtkP = 0;
+        let sumTotalDmg = 0, sumCritRate = 0, sumBossDmg = 0; // 무기 잠재
+        let weaponAtk = 0, thrAtk = 0;
+        let sseulshapEquipped = false;
+
+        active.forEach(it => {
+          sumLuk += (it.luk || 0) + (it.allstat || 0);
+          sumDex += (it.dex || 0) + (it.allstat || 0);
+          sumLukP += it.lukp || 0;
+          sumDexP += it.dexp || 0;
+          sumAllstatP += it.allstatp || 0;
+          sumAtkP += it.atkp || 0;
+          // 무기 잠재 (총뎀/크확/보공) - 무기 슬롯에만 의미
+          sumTotalDmg += it.totaldmg || 0;
+          sumCritRate += it.critrate || 0;
+          sumBossDmg += it.bossdmg || 0;
+          if (it.slot === '무기') {
+            weaponAtk += it.atk || 0;
+          } else if (it.slot === '표창') {
+            thrAtk += it.atk || 0;
+          } else {
+            sumAtkOther += it.atk || 0;
+          }
+          if (it.sseulshap) sseulshapEquipped = true;
+        });
+
+        const totalLukP = sumLukP + sumAllstatP;
+        const totalDexP = sumDexP + sumAllstatP;
+
+        const totalLuk = Math.floor((baseLuk + sumLuk) * (1 + totalLukP / 100));
+        const totalDex = Math.floor((baseDex + sumDex) * (1 + totalDexP / 100));
+
+        // WA = floor(weaponAtk × (1 + atk%/100)) + 표창 + 기타공격력 + 혼테일
+        const weaponEff = Math.floor(weaponAtk * (1 + sumAtkP / 100));
+        const wa = weaponEff + thrAtk + sumAtkOther + (opts.horntail ? 30 : 0);
+
+        const stat = Math.floor((totalLuk * 3.6 + totalDex) * wa / 100);
+        // ===== 최소 base AP + 장비별 활성 임계 base 역산 =====
+        // 알고리즘: 게임 동작은 "base 가 정해지면 모든 장비 동시 합산 후 cycle". 순차 활성 X.
+        //   → b 를 0 부터 +1 씩 올리며 simulateCycle. 새로 활성된 장비의 b 를 activatedAt 에 기록.
+        //   monotone: base 가 클수록 더 많이 활성. 한 번 활성되면 계속 활성.
+        const allItems = equip.filter(Boolean);
+        const activatedAt = new Map();
+        let requiredBase = 0;
+        for (let b = 0; b <= 99999; b++) {
+          const inactiveB = simulateCycle(b);
+          let allActive = true;
+          allItems.forEach(it => {
+            if (!inactiveB.has(it.id) && !activatedAt.has(it.id)) {
+              activatedAt.set(it.id, b);
+            }
+            if (inactiveB.has(it.id)) allActive = false;
+          });
+          if (allActive) { requiredBase = b; break; }
+        }
+        // reqDex > 0 이면서 base AP 가 실제로 필요한 (baseNeeded > 0) 장비만 progression 에
+        const reqSteps = allItems
+          .filter(it => (it.reqDex || 0) > 0 && (activatedAt.get(it.id) || 0) > 0)
+          .map(it => ({ name: it.name, slot: it.slot, reqDex: it.reqDex, baseNeeded: activatedAt.get(it.id) }))
+          .sort((a, b) => a.baseNeeded - b.baseNeeded);
+
+        return {
+          totalLuk, totalDex, wa, stat, sseulshapEquipped,
+          sumLuk, sumDex, sumLukP, sumDexP, sumAllstatP, sumAtkP, sumAtkOther,
+          sumTotalDmg, sumCritRate, sumBossDmg,
+          weaponAtk, thrAtk,
+          inactiveIds, mwPct, baseLukBoosted: baseLuk, baseDexBoosted: baseDex,
+          requiredBaseDex: requiredBase, reqSteps,
+        };
+      }
+
+      // ============== 스킬 레벨별 데이터 (옛메 나이트로드 기준) ==============
+      const SKILL_DATA = {
+        // 럭키 세븐: 데미지 % per hit (× 2타)
+        ls: { maxLv: 20, hits: 2, dmg: [
+          0, 58, 62, 66, 70, 76, 80, 84, 90, 94, 100,
+          104, 110, 114, 120, 124, 130, 134, 140, 144, 150
+        ]},
+        // 트리플 스로우: 데미지 % per hit (× 3타)
+        trs: { maxLv: 30, hits: 3, dmg: [
+          0, 102, 104, 106, 108, 110, 112, 114, 116, 118, 120,
+          122, 124, 126, 128, 130, 132, 134, 136, 138, 140,
+          141, 142, 143, 144, 145, 146, 147, 148, 149, 150
+        ]},
+        // 크리티컬 스로우: 크확 = 20+L, 크리데미지 = 110+3L (per crit = (110+3L)-100 = 10+3L %p)
+        critthrow: { maxLv: 30, rate: (L) => 20 + L, perCritPp: (L) => 10 + 3 * L },
+        // 쉐도우 파트너 스킬 데미지 % (스킬에 적용되는 분신 데미지 비율)
+        shadow: { maxLv: 30, skill: [
+          0, 21, 21, 21, 21, 21, 21, 21, 22, 23, 24,
+          25, 26, 27, 28, 29, 30, 31, 32, 33, 34,
+          35, 36, 37, 38, 40, 42, 44, 46, 48, 50
+        ]},
+        // 자벨린 마스터리: 10 + ceil(L/2) × 5
+        mastery: { maxLv: 20, pct: (L) => L === 0 ? 0 : 10 + Math.ceil(L / 2) * 5 },
+      };
+
+      function attackInfo(skillKey, lv) {
+        const s = SKILL_DATA[skillKey];
+        const perHit = s.dmg[lv] || 0;
+        return { perHit, hits: s.hits, totalPct: perHit * s.hits };
+      }
+
+      // 공격/크리/쉐파 데미지 — LS/TT 는 특수 공식 (LUK×5 / LUK×2.5)
+      function computeAttackDamage(stat, opts, statsObj) {
+        const sharpMap = { none: [0, 0], usable: [10, 15], max: [15, 40] };
+        // 장갑에 쓸샾이 박혀있으면 최소 쓸샾 보장 (글로벌 샤프가 더 강하면 그쪽 적용)
+        const sharpLevel = { none: 0, usable: 1, max: 2 };
+        let effSharp = opts.sharp;
+        const sharpFromGlove = statsObj.sseulshapEquipped && sharpLevel[effSharp] < 1;
+        if (sharpFromGlove) effSharp = 'usable';
+        const sharpCrit = sharpMap[effSharp][0];
+        const sharpDmg = sharpMap[effSharp][1];
+
+        // 크리스로우 레벨별
+        const critLv = opts.critthrowLv || 0;
+        const baseCrit = critLv > 0 ? SKILL_DATA.critthrow.rate(critLv) : 0;
+        const baseCritDmgPp = critLv > 0 ? SKILL_DATA.critthrow.perCritPp(critLv) : 0;
+
+        const potCrit = statsObj.sumCritRate;
+        const potTotalDmg = statsObj.sumTotalDmg;
+        const potBossDmg = statsObj.sumBossDmg;
+
+        const totalCrit = baseCrit + sharpCrit + potCrit;
+        let perCrit = baseCritDmgPp;
+        if (sharpCrit > 0 || sharpDmg > 0) perCrit += (100 + sharpDmg);
+
+        // LS/TT 특수 공식 - per hit
+        // MAX = LUK × 5 × WA / 100 × (skill_dmg/100)
+        // MIN = LUK × 2.5 × WA / 100 × (skill_dmg/100)
+        const LUK = statsObj.totalLuk;
+        const WA = statsObj.wa;
+        const atkSkill = opts.atkSkill || 'trs';
+        const atkLv = opts.atkLv || 0;
+        const sData = SKILL_DATA[atkSkill];
+        const skillDmgPct = sData.dmg[atkLv] || 0;
+        const hits = sData.hits;
+        const perHitMax = LUK * 5    * WA / 100 * (skillDmgPct / 100);
+        const perHitMin = LUK * 2.5  * WA / 100 * (skillDmgPct / 100);
+
+        // 크리 적용 (per crit %p 가산)
+        const critMult = 1 + perCrit / 100;
+        const perHitCritMax = perHitMax * critMult;
+        const perHitCritMin = perHitMin * critMult;
+
+        // 쉐도우 파트너 (스킬 데미지 비율)
+        const shadowLv = opts.shadowLv || 0;
+        const shadowSkillPct = shadowLv > 0 ? SKILL_DATA.shadow.skill[shadowLv] : 0;
+        const shadowMult = 1 + shadowSkillPct / 100;
+
+        const totalDmgMult = 1 + potTotalDmg / 100;
+        const bossMult = opts.boss ? (1 + potBossDmg / 100) : 1.0;
+        // 한 사이클 (모든 hits) 멀티플라이어
+        const cycleMult = hits * shadowMult * totalDmgMult * bossMult;
+        // 1타 멀티플라이어 (쉐파 X)
+        const oneHitMult = totalDmgMult * bossMult;
+
+        // 기댓값 (per hit) — 일반/크리 평균 × 크리 확률
+        const perHitAvgNoCrit = (perHitMin + perHitMax) / 2;
+        const perHitAvgCrit = (perHitCritMin + perHitCritMax) / 2;
+        const perHitExpected = (1 - totalCrit / 100) * perHitAvgNoCrit + (totalCrit / 100) * perHitAvgCrit;
+
+        // 마스터리 (LS/TT 미적용. 표시만 함)
+        const masteryLv = opts.masteryLv || 0;
+        const masteryPct = masteryLv > 0 ? SKILL_DATA.mastery.pct(masteryLv) : 0;
+
+        return {
+          // 사이클 (쉐파 포함)
+          noCritMin: Math.floor(perHitMin * cycleMult),
+          noCritMax: Math.floor(perHitMax * cycleMult),
+          critMin:   Math.floor(perHitCritMin * cycleMult),
+          critMax:   Math.floor(perHitCritMax * cycleMult),
+          expected:  Math.floor(perHitExpected * cycleMult),
+          // 1타 데미지 (쉐파 X — 게임 데미지 숫자랑 매칭용)
+          oneHitNoCritMin: Math.floor(perHitMin * oneHitMult),
+          oneHitNoCritMax: Math.floor(perHitMax * oneHitMult),
+          oneHitCritMin:   Math.floor(perHitCritMin * oneHitMult),
+          oneHitCritMax:   Math.floor(perHitCritMax * oneHitMult),
+          // 기타
+          trsExpectedPct: (perHitExpected * hits / stat) * 100, // 호환
+          shadowMult, shadowSkillPct, totalCrit, perCrit,
+          masteryPct, hits, skillDmgPct, LUK, WA,
+          effSharp, sharpFromGlove,
+        };
+      }
+      // 호환성 alias (기존 호출 코드)
+      const computeTrsDamage = computeAttackDamage;
+
+      // ============== 스탯 환산 (maplescouter 스타일) ==============
+      // 현재 셋업 + 스킬/버프 기준, 각 옵션 1단위가 LUK 몇 / 무공 몇 과 같은 데미지 효과인지
+      function renderConverter(baseEquip, opts, baseDmg, baseStats) {
+        const D0 = baseDmg.expected;
+        // 가상 아이템 추가해서 +100 단위 측정 → /100 으로 1단위 평균 (floor 영향 평탄화)
+        function deltaExp(item) {
+          const aug = [...baseEquip, { id: '_v', name: '_v', slot: item.slot || '훈장', ...item }];
+          const s = computeStats(aug, opts);
+          const d = computeAttackDamage(s.stat, opts, s);
+          return d.expected;
+        }
+        const dLukUnit = (deltaExp({ slot:'훈장', luk: 100 }) - D0) / 100;
+
+        const lines = [
+          { label: 'LUK 1%',   item: { slot:'훈장', lukp: 100 } },
+          { label: '올스탯 1%', item: { slot:'훈장', allstatp: 100 } },
+          { label: '공격력 1%', item: { slot:'무기', atkp: 100 } },
+          { label: '공격력 1',  item: { slot:'표창', atk: 100 } },
+          { label: '크확 1%',  item: { slot:'무기', critrate: 100 } },
+          { label: '총뎀 1%',  item: { slot:'무기', totaldmg: 100 } },
+          { label: '보공 1%',  item: { slot:'무기', bossdmg: 100 }, hint: opts.boss ? '' : '보스 OFF — 효과 0' },
+        ];
+        const rows = lines.map(l => {
+          const perUnit = (deltaExp(l.item) - D0) / 100;
+          return { label: l.label, hint: l.hint || '',
+            lukEq: dLukUnit ? perUnit / dLukUnit : 0,
+          };
+        });
+
+        // 깡 LUK 1 → 최종 LUK 증가량
+        const sPlus = computeStats([...baseEquip, { id:'_v', slot:'훈장', luk: 100 }], opts);
+        const perLuk = (sPlus.totalLuk - baseStats.totalLuk) / 100;
+
+        document.getElementById('cv-luk').textContent = baseStats.totalLuk;
+        document.getElementById('cv-perluk').textContent = perLuk.toFixed(2);
+        document.getElementById('convert-list').innerHTML = rows.map(r => `
+          <div class="flex items-center justify-between border border-slate-200 rounded px-2.5 py-1.5">
+            <div class="text-xs text-slate-700">
+              ${r.label}${r.hint ? `<span class="text-[9px] text-slate-400 ml-1">(${r.hint})</span>` : ''}
+            </div>
+            <div class="text-xs font-mono font-bold text-slate-800">LUK <span class="text-violet-600">+${r.lukEq.toFixed(2)}</span></div>
+          </div>
+        `).join('');
+      }
+
+      function readOpts() {
+        return {
+          level: +document.getElementById('char-level').value || 135,
+          baseLuk: +document.getElementById('base-luk').value || 0,
+          baseDex: +document.getElementById('base-dex').value || 0,
+          sharp: document.getElementById('sharp').value,
+          horntail: document.getElementById('horntail').checked,
+          boss: document.getElementById('boss-mode').checked,
+          atkSkill: document.getElementById('atk-skill').value,
+          atkLv: +document.getElementById('atk-lv').value || 0,
+          critthrowLv: +document.getElementById('critthrow-lv').value || 0,
+          shadowLv: +document.getElementById('shadow-lv').value || 0,
+          masteryLv: +document.getElementById('mastery-lv').value || 0,
+          mwLv: +document.getElementById('mw-lv').value || 0,
+        };
+      }
+
+      function saveConfig() {
+        localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(readOpts()));
+      }
+
+      // 캐릭터/스킬/버프 input 에 저장된 설정 복원
+      function applySavedConfig() {
+        if (!savedConfig || Object.keys(savedConfig).length === 0) return;
+        const map = {
+          level: 'char-level', baseLuk: 'base-luk', baseDex: 'base-dex',
+          atkSkill: 'atk-skill', atkLv: 'atk-lv',
+          critthrowLv: 'critthrow-lv', shadowLv: 'shadow-lv',
+          masteryLv: 'mastery-lv', mwLv: 'mw-lv', sharp: 'sharp',
+        };
+        Object.entries(map).forEach(([k, id]) => {
+          if (savedConfig[k] != null) document.getElementById(id).value = savedConfig[k];
+        });
+        if (savedConfig.horntail != null) document.getElementById('horntail').checked = savedConfig.horntail;
+        if (savedConfig.boss != null) document.getElementById('boss-mode').checked = savedConfig.boss;
+      }
+      applySavedConfig();
+
+      function recalc() {
+        const opts = readOpts();
+        // base loadout equip
+        const baseEquip = SLOTS.map(s => loadout[s] ? items.find(i => i.id === loadout[s]) : null).filter(Boolean);
+        const baseStats = computeStats(baseEquip, opts);
+        const baseDmg = computeTrsDamage(baseStats.stat, opts, baseStats);
+
+        document.getElementById('r-luk').textContent = baseStats.totalLuk;
+        document.getElementById('r-dex').textContent = baseStats.totalDex;
+        document.getElementById('r-wa').textContent = baseStats.wa;
+        document.getElementById('r-stat').textContent = baseStats.stat.toLocaleString();
+        document.getElementById('r-trs-nocrit').textContent =
+          `${baseDmg.noCritMin.toLocaleString()} ~ ${baseDmg.noCritMax.toLocaleString()}`;
+        document.getElementById('r-trs-crit').textContent =
+          `${baseDmg.critMin.toLocaleString()} ~ ${baseDmg.critMax.toLocaleString()}`;
+        document.getElementById('r-trs-exp').textContent = baseDmg.expected.toLocaleString();
+        document.getElementById('r-1hit-nocrit').textContent =
+          `${baseDmg.oneHitNoCritMin.toLocaleString()} ~ ${baseDmg.oneHitNoCritMax.toLocaleString()}`;
+        document.getElementById('r-1hit-crit').textContent =
+          `${baseDmg.oneHitCritMin.toLocaleString()} ~ ${baseDmg.oneHitCritMax.toLocaleString()}`;
+        const skillLabel = opts.atkSkill === 'trs' ? '트스 3타' : '럭세 2타';
+        document.getElementById('r-skill-label').textContent = '— ' + skillLabel;
+        // Effective sharp 표시 (외부 / 장갑 보장 / 없음)
+        const sharpInfoEl = document.getElementById('r-sharp-info');
+        const sharpLabel = baseDmg.effSharp === 'max' ? '만샤프' : baseDmg.effSharp === 'usable' ? '쓸샾' : '샤프 X';
+        const sharpSource = baseDmg.effSharp === 'none'
+          ? { cls: 'bg-slate-100 text-slate-500', src: '' }
+          : baseDmg.sharpFromGlove
+            ? { cls: 'bg-orange-100 text-orange-700', src: '장갑 자체 보장' }
+            : { cls: 'bg-amber-100 text-amber-700', src: '외부' };
+        sharpInfoEl.className = 'text-[9px] px-1 py-0.5 rounded font-semibold normal-case ' + sharpSource.cls;
+        sharpInfoEl.textContent = sharpSource.src ? `${sharpLabel} · ${sharpSource.src}` : sharpLabel;
+        document.getElementById('r-pct').textContent =
+          `${(baseDmg.trsExpectedPct * baseDmg.shadowMult).toFixed(0)}%`;
+
+        // 스킬 정보 라벨
+        const atkS = opts.atkSkill, atkL = opts.atkLv;
+        const atkSkillName = atkS === 'trs' ? '트스' : '럭세';
+        const atkPerHit = SKILL_DATA[atkS].dmg[atkL] || 0;
+        const atkHits = SKILL_DATA[atkS].hits;
+        document.getElementById('atk-info').textContent =
+          atkL > 0 ? `${atkSkillName} ${atkL}: ${atkPerHit}% × ${atkHits}타 = ${atkPerHit*atkHits}%` : '—';
+        const cL = opts.critthrowLv;
+        document.getElementById('critthrow-info').textContent =
+          cL > 0 ? `크확 ${SKILL_DATA.critthrow.rate(cL)}% / 크리데미지 ${110+3*cL}% (+${SKILL_DATA.critthrow.perCritPp(cL)}%p)` : '없음';
+        const sL = opts.shadowLv;
+        document.getElementById('shadow-info').textContent =
+          sL > 0 ? `스킬 데미지 ${SKILL_DATA.shadow.skill[sL]}% → ×${(1+SKILL_DATA.shadow.skill[sL]/100).toFixed(2)}` : '없음';
+        const mL = opts.masteryLv;
+        document.getElementById('mastery-info').textContent =
+          mL > 0 ? `${SKILL_DATA.mastery.pct(mL)}% (트스/럭세는 미적용 — 특수공식 자체 변동)` : '없음';
+        const mwL = opts.mwLv;
+        document.getElementById('mw-info').textContent =
+          mwL > 0 ? `모든 스탯 +${Math.ceil(mwL/2)}% (순 AP boost: LUK +${Math.floor(opts.baseLuk*Math.ceil(mwL/2)/100)}, DEX +${Math.floor(opts.baseDex*Math.ceil(mwL/2)/100)})` : '없음';
+
+        // 총 스탯 통계
+        const cell = (label, val, unit='', color='', bg='bg-slate-50') => {
+          const v = (val === 0 || val == null) ? '—' : `${val}${unit}`;
+          const valColor = (val === 0 || val == null) ? 'text-slate-300' : (color || 'text-slate-800');
+          return `<div class="${bg} rounded px-2.5 py-2">
+            <div class="text-[10px] text-slate-500">${label}</div>
+            <div class="font-mono font-bold text-base ${valColor}">${v}</div>
+          </div>`;
+        };
+        document.getElementById('summary-stat').innerHTML =
+          cell('깡 LUK', baseStats.sumLuk, '', 'text-blue-600') +
+          cell('LUK%', baseStats.sumLukP + baseStats.sumAllstatP, '%', 'text-blue-600') +
+          cell('깡 DEX', baseStats.sumDex, '', 'text-purple-600') +
+          cell('DEX%', baseStats.sumDexP + baseStats.sumAllstatP, '%', 'text-purple-600');
+
+        // 공격력: 공% 적용 = 무기깡공만 / 미적용 = 표창 + 장갑 (등) + (혼테일 같은 버프는 나중에)
+        document.getElementById('summary-atk').innerHTML =
+          cell('무기공 (공% O)', baseStats.weaponAtk, '', 'text-orange-600', 'bg-orange-50') +
+          cell('표창공 (공% X)', baseStats.thrAtk, '', 'text-slate-700') +
+          cell('장갑공 등 (공% X)', baseStats.sumAtkOther, '', 'text-slate-700');
+
+        document.getElementById('summary-pot').innerHTML =
+          cell('공%', baseStats.sumAtkP, '%', 'text-orange-600', 'bg-orange-50') +
+          cell('총뎀%', baseStats.sumTotalDmg, '%', 'text-rose-600') +
+          cell('크확%', baseStats.sumCritRate, '%', 'text-rose-600') +
+          cell('보공%', baseStats.sumBossDmg, '%', 'text-rose-600');
+
+        // 스탯 환산표 렌더
+        renderConverter(baseEquip, opts, baseDmg, baseStats);
+
+        // ===== 부스탯 요구치 알림 + dropdown 빨간 표시 =====
+        const reqSection = document.getElementById('reqdex-section');
+        const reqContent = document.getElementById('reqdex-content');
+        const inactiveItems = baseEquip.filter(it => baseStats.inactiveIds.has(it.id));
+        const reqBase = baseStats.requiredBaseDex;
+        const curBase = opts.baseDex;
+        const hasRequired = baseEquip.some(it => (it.reqDex || 0) > 0);
+
+        // dropdown 빨간 표시 (재렌더 없이 css class 토글)
+        document.querySelectorAll('.loadout-sel').forEach(sel => {
+          sel.classList.remove('border-rose-500','bg-rose-50','text-rose-700','font-semibold');
+          const id = sel.value;
+          if (id && baseStats.inactiveIds.has(id)) {
+            sel.classList.add('border-rose-500','bg-rose-50','text-rose-700','font-semibold');
+          }
+        });
+
+        if (hasRequired) {
+          reqSection.classList.remove('hidden');
+          const parts = [];
+          // 필요 base / 현재 / 부족
+          const shortage = Math.max(0, reqBase - curBase);
+          const boxClass = shortage > 0 ? 'bg-rose-50 border-rose-300' : 'bg-emerald-50 border-emerald-300';
+          const txtClass = shortage > 0 ? 'text-rose-700' : 'text-emerald-700';
+          parts.push(`
+            <div class="grid grid-cols-3 gap-1.5">
+              <div class="rounded border ${boxClass} px-2 py-1.5">
+                <div class="text-[10px] text-slate-500">필요 순수 DEX</div>
+                <div class="font-mono font-bold text-sm ${txtClass}">${reqBase}</div>
+              </div>
+              <div class="rounded border border-slate-200 bg-slate-50 px-2 py-1.5">
+                <div class="text-[10px] text-slate-500">현재 순수 DEX</div>
+                <div class="font-mono font-bold text-sm text-slate-700">${curBase}</div>
+              </div>
+              <div class="rounded border ${boxClass} px-2 py-1.5">
+                <div class="text-[10px] text-slate-500">${shortage > 0 ? '부족' : '여유'}</div>
+                <div class="font-mono font-bold text-sm ${txtClass}">${shortage > 0 ? '-' + shortage : '+' + (curBase - reqBase)}</div>
+              </div>
+            </div>
+          `);
+          if (opts.mwLv > 0) {
+            parts.push(`<div class="text-[10px] text-slate-500">메용 Lv${opts.mwLv} 포함 boost 기준. AP 빼고 끄면 boost 없어져서 필요치 더 올라감.</div>`);
+          }
+          if (inactiveItems.length > 0) {
+            const names = inactiveItems.map(it => `<span class="inline-block px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 text-[10px] font-semibold mr-1">${it.name} (${it.reqDex})</span>`).join('');
+            parts.push(`<div class="border-t border-rose-100 pt-1.5">
+              <div class="text-[10px] text-rose-600 font-semibold mb-1">⚠ 미적용 ${inactiveItems.length}개 — 스탯 합산에서 제외</div>
+              <div>${names}</div>
+            </div>`);
+          } else {
+            parts.push(`<div class="text-[10px] text-emerald-700 font-semibold">✓ 모든 장비 활성화됨</div>`);
+          }
+
+          // 활성화 순서 (찍어야 할 base DEX progression)
+          if (baseStats.reqSteps && baseStats.reqSteps.length > 0) {
+            const arrow = '<span class="text-slate-400 mx-1">→</span>';
+            const chain = baseStats.reqSteps.map((s, i) => {
+              const reached = curBase >= s.baseNeeded;
+              const cls = reached ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
+              return `<span class="inline-block px-1.5 py-0.5 rounded ${cls} text-[10px] font-mono font-semibold whitespace-nowrap" title="${s.name} (요구 DEX ${s.reqDex})">${s.baseNeeded}</span>`;
+            }).join(arrow);
+            const detail = baseStats.reqSteps.map((s, i) =>
+              `<div class="flex items-center gap-1.5 text-[10px]">
+                <span class="font-mono font-semibold w-8 text-right ${curBase >= s.baseNeeded ? 'text-emerald-700' : 'text-rose-700'}">${s.baseNeeded}</span>
+                <span class="text-slate-400">·</span>
+                <span class="text-slate-700 truncate">${s.name}</span>
+                <span class="text-slate-400 text-[9px] ml-auto">요구 ${s.reqDex}</span>
+              </div>`
+            ).join('');
+            parts.push(`<div class="border-t border-rose-100 pt-1.5 mt-1.5">
+              <div class="text-[10px] text-slate-500 mb-1">활성화 필요 순수 DEX 순서</div>
+              <div class="flex flex-wrap items-center gap-y-1 mb-1.5">${chain}</div>
+              <div class="space-y-0.5 bg-slate-50 rounded p-1.5">${detail}</div>
+              <div class="text-[9px] text-slate-400 mt-1">초록 = 현재 base DEX(${curBase})로 도달, 빨강 = 부족</div>
+            </div>`);
+          }
+
+          reqContent.innerHTML = parts.join('');
+        } else {
+          reqSection.classList.add('hidden');
+        }
+
+        // 비교 결과 — 프리셋별
+        const wrap = document.getElementById('compare-results');
+        wrap.innerHTML = '';
+        if (compares.length === 0) {
+          wrap.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-2">프리셋 없음</p>';
+          return;
+        }
+
+        // 1단계: 각 프리셋 결과 계산 (% 는 아직 X — 기준 결정 후 다시 계산)
+        const results = compares.map(preset => {
+          // 스냅샷 있으면 그 loadout/opts, 없으면 현재 셋업
+          const altLoadout = (preset.snapshot && preset.snapshot.loadout) ? preset.snapshot.loadout : loadout;
+          const altEquip = SLOTS.map(s => {
+            const useId = altLoadout[s];
+            return useId ? items.find(i => i.id === useId) : null;
+          }).filter(Boolean);
+          const altOpts = preset.snapshot ? { ...opts, ...preset.snapshot } : opts;
+          const altStats = computeStats(altEquip, altOpts);
+          const altDmg = computeTrsDamage(altStats.stat, altOpts, altStats);
+          return { preset, altEquip, altOpts, altStats, altDmg };
+        });
+
+        // 2단계: 비교 기준 결정 (basePresetId 있으면 그 프리셋, 없으면 현재 셋업)
+        let cmpBase = baseDmg; // 현재 셋업 데미지
+        let cmpBaseName = null;
+        if (basePresetId) {
+          const baseRes = results.find(r => r.preset.id === basePresetId);
+          if (baseRes) {
+            cmpBase = baseRes.altDmg;
+            cmpBaseName = baseRes.preset.name;
+          } else {
+            // 기준 프리셋이 삭제됐으면 해제
+            basePresetId = null;
+            localStorage.removeItem(STORAGE_KEYS.basePreset);
+          }
+        }
+
+        // 기준 label (basePresetId 있을 때)
+        if (cmpBaseName) {
+          const banner = document.createElement('div');
+          banner.className = 'flex items-center gap-1.5 bg-orange-50 border border-orange-200 rounded px-2 py-1 mb-1 text-[10px]';
+          banner.innerHTML = `
+            <span class="text-orange-700">📌 기준: <strong>${cmpBaseName}</strong> (${cmpBase.expected.toLocaleString()})</span>
+            <button type="button" id="cmp-base-clear-btn" class="ml-auto text-rose-600 hover:underline">기준 해제</button>
+          `;
+          wrap.appendChild(banner);
+          banner.querySelector('#cmp-base-clear-btn').addEventListener('click', () => {
+            basePresetId = null;
+            localStorage.removeItem(STORAGE_KEYS.basePreset);
+            renderPresetList();
+            recalc();
+          });
+        }
+
+        // 3단계: 현재 셋업 row (기준이 프리셋일 때만 의미 있음)
+        const rowMaker = (label, dmg, stats, opts2, extra = {}) => {
+          const dDmg = dmg.expected - cmpBase.expected;
+          const pct = cmpBase.expected ? (dDmg / cmpBase.expected * 100) : 0;
+          const isBase = extra.isBase;
+          const color = isBase ? 'text-orange-600' : (dDmg > 0 ? 'text-green-600' : (dDmg < 0 ? 'text-red-500' : 'text-slate-500'));
+          const pctLabel = isBase ? '기준' : `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+          const sharpLbl = dmg.effSharp === 'max' ? '만샤프' : dmg.effSharp === 'usable' ? '쓸샾' : '샤프X';
+          const sharpInfo = dmg.effSharp === 'none'
+            ? { cls: 'bg-slate-100 text-slate-500', src: '' }
+            : dmg.sharpFromGlove
+              ? { cls: 'bg-orange-100 text-orange-700', src: '장갑보장' }
+              : { cls: 'bg-amber-100 text-amber-700', src: '외부' };
+          const sharpChip = `<span class="inline-block px-1 py-0 rounded ${sharpInfo.cls} text-[9px] font-semibold ml-1">${sharpLbl}${sharpInfo.src ? '·'+sharpInfo.src : ''}</span>`;
+          const warnHtml = (stats && stats.inactiveIds && stats.inactiveIds.size > 0)
+            ? `<div class="text-[10px] text-rose-600 font-semibold">⚠ ${stats.inactiveIds.size}개 미적용 · 필요 DEX ${stats.requiredBaseDex} (-${Math.max(0, stats.requiredBaseDex - opts2.baseDex)})</div>`
+            : '';
+          const row = document.createElement('div');
+          const bg = isBase ? 'bg-orange-50 border border-orange-200' : 'bg-slate-50';
+          row.className = `flex items-center justify-between gap-2 ${bg} rounded p-2`;
+          row.innerHTML = `
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-xs truncate">${label}${extra.snapBadge || ''}${sharpChip}</div>
+              ${extra.sub ? `<div class="text-[10px] text-slate-400">${extra.sub}</div>` : ''}
+              ${warnHtml}
+            </div>
+            <div class="text-right">
+              <div class="font-mono font-bold text-sm">${dmg.expected.toLocaleString()}</div>
+              <div class="text-[10px] font-semibold ${color}">${pctLabel}</div>
+            </div>
+          `;
+          wrap.appendChild(row);
+        };
+
+        // 기준이 프리셋일 때만 현재 셋업 row 추가 (맨 위에)
+        if (cmpBaseName) {
+          rowMaker('🧍 현재 셋업', baseDmg, baseStats, opts, { sub: '좌측 입력 그대로' });
+        }
+
+        // 4단계: 모든 프리셋 row 출력
+        results.forEach(({ preset, altOpts, altStats, altDmg }) => {
+          const isBase = preset.id === basePresetId;
+          const snapBadge = preset.snapshot
+            ? `<span class="ml-1 inline-block px-1 py-0 rounded bg-blue-100 text-blue-700 text-[9px] font-semibold">📸</span>`
+            : `<span class="ml-1 inline-block px-1 py-0 rounded bg-rose-100 text-rose-700 text-[9px] font-semibold">캡쳐 X</span>`;
+          rowMaker(
+            preset.name || '(이름 없음)',
+            altDmg, altStats, altOpts,
+            {
+              snapBadge,
+              isBase,
+              sub: preset.snapshot ? '캡쳐된 셋업' : '캡쳐 없음 — 현재 셋업과 동일',
+            }
+          );
+        });
+
+        // 모든 입력 변경 후 자동 save (level / 스킬 / 버프 / base AP)
+        saveConfig();
+      }
+
+      // ============== 입력 변경 시 자동 재계산 ==============
+      // ============== 레벨/스탯 헬퍼 ==============
+      function levelAp(level) {
+        let ap = 5 * (level - 1);
+        if (level >= 70) ap += 5;
+        if (level >= 120) ap += 5;
+        return ap;
+      }
+      function totalStatPoints(level) {
+        // 시작 LUK 13 + DEX 4 + (STR 4 + INT 4 무시) + AP. STR/INT 가 0 라고 가정.
+        return 13 + 4 + levelAp(level);
+      }
+      // LUK ↔ DEX 양방향 연동 (총합 = totalStatPoints 유지)
+      let baseLinkLock = false;
+      function linkBaseStats(changed) {
+        if (baseLinkLock) return;
+        const lvl = +document.getElementById('char-level').value || 1;
+        const sum = totalStatPoints(lvl);
+        const intEl = document.getElementById('base-luk');
+        const dexEl = document.getElementById('base-dex');
+        baseLinkLock = true;
+        if (changed === 'luk') {
+          const v = parseFloat(intEl.value);
+          if (isFinite(v)) dexEl.value = Math.max(4, sum - v);
+        } else if (changed === 'dex') {
+          const v = parseFloat(dexEl.value);
+          if (isFinite(v)) intEl.value = Math.max(13, sum - v);
+        }
+        baseLinkLock = false;
+        recalc();
+      }
+      document.getElementById('base-luk').addEventListener('input', () => linkBaseStats('luk'));
+      document.getElementById('base-dex').addEventListener('input', () => linkBaseStats('dex'));
+
+      // 4 미만 입력 방지
+      function validateBaseMin(el, label, min) {
+        const v = parseFloat(el.value);
+        if (isFinite(v) && v < min) {
+          alert(`순수 ${label} 는 ${min} 미만이 될 수 없습니다.`);
+          el.value = min;
+          linkBaseStats(label === 'LUK' ? 'luk' : 'dex');
+        }
+      }
+      document.getElementById('base-luk').addEventListener('change', e => validateBaseMin(e.target, 'LUK', 13));
+      document.getElementById('base-dex').addEventListener('change', e => validateBaseMin(e.target, 'DEX', 4));
+
+      // 레벨 / 스킬 변경 시 재계산
+      document.getElementById('char-level').addEventListener('input', recalc);
+      ['atk-lv','critthrow-lv','shadow-lv','mastery-lv','mw-lv'].forEach(id => {
+        document.getElementById(id).addEventListener('input', recalc);
+      });
+      ['sharp','atk-skill'].forEach(id => document.getElementById(id).addEventListener('change', recalc));
+      ['horntail','boss-mode'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', recalc);
+      });
+
+      // MAX 버튼들 — 각 스킬 max level 채워줌
+      const MAX_BTN_MAP = {
+        atk: { input: 'atk-lv', max: () => SKILL_DATA[document.getElementById('atk-skill').value].maxLv },
+        critthrow: { input: 'critthrow-lv', max: () => SKILL_DATA.critthrow.maxLv },
+        shadow:    { input: 'shadow-lv',    max: () => SKILL_DATA.shadow.maxLv },
+        mastery:   { input: 'mastery-lv',   max: () => SKILL_DATA.mastery.maxLv },
+        mw:        { input: 'mw-lv',        max: () => 30 },
+      };
+      document.querySelectorAll('[data-max-btn]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const cfg = MAX_BTN_MAP[btn.dataset.maxBtn];
+          if (!cfg) return;
+          document.getElementById(cfg.input).value = cfg.max();
+          recalc();
+        });
+      });
+      // 공격 스킬 바뀔 때 max 값 자동 cap
+      document.getElementById('atk-skill').addEventListener('change', () => {
+        const max = SKILL_DATA[document.getElementById('atk-skill').value].maxLv;
+        const el = document.getElementById('atk-lv');
+        el.max = max;
+        if (+el.value > max) el.value = max;
+        recalc();
+      });
+
+      // 현재 상태 → 기본값으로 저장
+      document.getElementById('save-default').addEventListener('click', () => {
+        const snapshot = {
+          items, loadout, compares,
+          baseLuk: +document.getElementById('base-luk').value || 0,
+          baseDex: +document.getElementById('base-dex').value || 0,
+          level: +document.getElementById('char-level').value || 135,
+        };
+        localStorage.setItem(STORAGE_KEYS.userDefault, JSON.stringify(snapshot));
+        alert('현재 상태를 기본값으로 저장. 데이터 리셋 시 이 상태로 복원됨.');
+      });
+
+      // 데이터 리셋 — 사용자 저장값 있으면 복원, 없으면 원본 시드
+      document.getElementById('reset-data').addEventListener('click', () => {
+        const userSaved = localStorage.getItem(STORAGE_KEYS.userDefault);
+        const msg = userSaved
+          ? '저장된 기본값으로 복원합니다. 계속?'
+          : '원본 시드로 초기화합니다. 계속?';
+        if (!confirm(msg)) return;
+        if (userSaved) {
+          const s = JSON.parse(userSaved);
+          items = s.items || [];
+          loadout = s.loadout || {};
+          compares = s.compares || [];
+          if (s.baseLuk) document.getElementById('base-luk').value = s.baseLuk;
+          if (s.baseDex) document.getElementById('base-dex').value = s.baseDex;
+          if (s.level) document.getElementById('char-level').value = s.level;
+          save();
+        } else {
+          items = []; loadout = {}; compares = [];
+          [STORAGE_KEYS.items, STORAGE_KEYS.loadout, STORAGE_KEYS.compares].forEach(k => localStorage.removeItem(k));
+          seedDefaults();
+        }
+        renderItemList();
+        renderLoadout();
+        renderPresetList();
+        recalc();
+      });
+
+      // ============== 초기 ==============
+      renderItemList();
+      renderLoadout();
+      renderPresetList();
+      recalc();
+    </script>
+  </body>
+</html>
