@@ -208,56 +208,79 @@ per hit MIN = LUK × 2.5  × WA / 100 × (스킬데미지% / 100)
 - **표창 마스터리 미적용** (LS/TT 는 LUK 5/2.5 자체 변동으로 ×2 MIN/MAX)
 - 일반 공식 (LUK × 3.6) 보다 LUK 영향력 큼 → 같은 LUK 일 때 약 1.39배
 
-**크리 적용**:
-- 크리스로우 Lv L: 크확 `20+L`%, per crit `10+3L`%p
-- 샤프 (외부 버프):
+**크리 적용** (⚠️ **합연산** — 옛메/메플플 표준):
+- 크리스로우 Lv L: 크확 `20+L`%, per crit `10+3L`%p (lv30 = +100%p)
+- 샤프 (외부 버프 또는 장갑 자체 보장):
   - 쓸샾 (10%/+15%) → per crit 추가 = (100 + 15) = +115%p
   - 만렙 (15%/+40%) → per crit 추가 = (100 + 40) = +140%p
-- crit hit = base hit × (1 + per_crit / 100)
+- **crit hit = stat × (skillDmg% + perCrit%p) / 100**  (전 `× (1 + perCrit/100)` 곱연산은 오류)
+
+LS/TT 특수 공식의 "stat" = `LUK × 5 / 2.5 × WA / 100` (skill 미적용 raw 스공).
 
 **전체 사이클 (3타 또는 2타)**:
 ```
+statMax = LUK × 5   × WA / 100
+statMin = LUK × 2.5 × WA / 100
+perHitMax = statMax × skillDmg / 100      ← 일반 1타
+perHitMin = statMin × skillDmg / 100
+perHitCritMax = statMax × (skillDmg + perCrit) / 100   ← 크리 1타 (합연산)
+perHitCritMin = statMin × (skillDmg + perCrit) / 100
+
 cycleMult = hits × (1 + 쉐파_스킬데미지%/100) × (1 + 총뎀%/100) × (보스전 ? 1 + 보공%/100 : 1)
 
-크리 ✗ MIN = perHitMin × cycleMult
-크리 ✗ MAX = perHitMax × cycleMult
-크리 ✓ MIN = perHitMin × (1 + perCrit/100) × cycleMult
-크리 ✓ MAX = perHitMax × (1 + perCrit/100) × cycleMult
+크리 ✗ MIN/MAX = perHitMin/Max × cycleMult
+크리 ✓ MIN/MAX = perHitCritMin/Max × cycleMult
 
 기댓값 = ((1 - 크확/100) × (perHitMin+perHitMax)/2
-       + (크확/100) × (perHitMin+perHitMax)/2 × (1+perCrit/100)) × cycleMult
+       + (크확/100) × (perHitCritMin+perHitCritMax)/2) × cycleMult
 ```
 
 **1타 데미지 (인게임 검증용)**:
 ```
 oneHitMult = (1 + 총뎀%/100) × 보스배율   ← 쉐파/타수 제외
 1타 일반 = perHitMin × oneHitMult ~ perHitMax × oneHitMult
-1타 크리 = 위 × (1 + perCrit/100)
+1타 크리 = perHitCritMin × oneHitMult ~ perHitCritMax × oneHitMult
 ```
 
 → 인게임에서 트스 한 번 쓰면 1타 × 3개 데미지 숫자 뜸. 그게 이 범위 안에 들어와야 공식 검증.
 → 쉐파는 별도 데미지 숫자로 뜸 (분신).
+→ 인게임 실제 데미지는 추가로 WDEF 차감됨 (아래 4.6 참고).
 
-### 4.6 잠재 / 버프 적용 순서
+### 4.6 물리방어 / 마법방어 식 (옛메 표준, 메플플 동일 가정)
 
-1. `perHitMax/MIN = LUK × 5/2.5 × WA / 100 × skillDmg%`  ← LS/TT 특수
-2. `× (1 + perCrit/100)` if crit
-3. `× hits` (트스 = 3, 럭세 = 2)
-4. `× (1 + 쉐파 스킬데미지%/100)`
-5. `× (1 + 총뎀%/100)`
-6. `× (1 + 보공%/100)` if 보스전
+```
+D = max(0, 몬스터레벨 - 캐릭터레벨)
 
-### 4.7 ⚠️ 한계 — 메플플 검증 안 됨
+물리 (트스 포함):  스공에서 방어 먼저 차감 → 스킬% / 크리 / 후순위
+  adj_max = max_스공 × (1 - 0.01D) - WDEF × 0.5
+  adj_min = min_스공 × (1 - 0.01D) - WDEF × 0.6
 
-- LUK × 5/2.5 상수: **본점 빅뱅 전 KMS / MapleLegends 표준**. 메플플도 동일한지 인게임 측정 필요
-- 검증 방법: 트스 한 번 쓰고 1타 데미지가 1타 데미지 범위 (크리 X 일반) 안에 들어오는지 확인
-- 안 맞으면 LUK 계수 조정 (5 → 5.4 or 다른 값)
+마법:              스킬 데미지 계산 후 방어 차감
+  adj_max = 최대 스킬데미지 - MDEF × 0.5 × (1 + 0.01D)
+  adj_min = 최소 스킬데미지 - MDEF × 0.6 × (1 + 0.01D)
+```
 
-### 4.5 마력% / 데미지% / 곱연산 vs 합연산
+- 메플플의 일반 몹 wdef/mdef/level 자료: [`기존/data/mapleland_monsters.json`](../../기존/data/mapleland_monsters.json) (273마리)
+- 예: 스켈레곤 wdef 800 / mdef 700 / level 110
+- **현재 환산기는 WDEF 미반영** — 1타 데미지 표시는 방어 적용 전 값. 인게임은 차감 후 보임.
+
+### 4.7 잠재 / 버프 적용 순서 (정리)
+
+1. `statMax/Min = LUK × 5/2.5 × WA / 100`  ← LS/TT 특수 스공
+2. (계획) `× (1 - 0.01D) - WDEF × 0.5/0.6`  ← 몬스터 물리방어 차감 — **아직 환산기 미반영**
+3. `× (skillDmg + perCrit) / 100` (크리) or `× skillDmg / 100` (일반)  ← **합연산**
+4. `× hits` (트스 = 3, 럭세 = 2)
+5. `× (1 + 쉐파 스킬데미지%/100)`
+6. `× (1 + 총뎀%/100)`
+7. `× (1 + 보공%/100)` if 보스전
+
+### 4.8 곱연산 vs 합연산 요약
 
 - **잠재 % 옵션 (공%, 총뎀%, 크확%, 보공%)**: 곱연산 (각자 1+x/100 형태로 곱해짐)
-- **크리 (옛메)**: **합연산** — 크리 떴을 때 추가 데미지가 더해짐 (×2 아님)
-- 메플플 데미지 옵션은 곱연산. 합연산은 경험치/메소 시너지만.
+- **크리 데미지 (옛메/메플플)**: **합연산** — 스킬%p 에 크리 추가%p 가 더해짐. ×2 배 아님.
+  - 예: TRS lv 30 일반 150%p → 크리 250%p (= 150 + 100 from 크리스로우 30) → 1.667배
+  - 만샾 추가: 250 + 140 = 390%p
+  - 출처: [arca 옛메 크리 계산방식](https://arca.live/b/mapleland/114593305) + [메플플 마갤 (허밋기준)잠재 크확](참고/maplanet-허밋-크확-효율.html)
 
 ---
 
@@ -291,7 +314,8 @@ oneHitMult = (1 + 총뎀%/100) × 보스배율   ← 쉐파/타수 제외
 | 메이플랜드 마갤 공식 모음 | dcinside `mapleland/829358` | 일반 데미지 공식 (`(M²/1000 + M×0.9×마숙)/30 + INT/200`) — 마법사 검증용 |
 | 메이플 플래닛 마갤 (마력=뎀 검증) | dcinside `mapleplanet/33949` | 잠재% 곱연산 검증 |
 | 메이플 플래닛 마갤 (마력 vs 뎀 종결) | dcinside `mapleplanet/43995` | 잠재 효율 비교 |
-| arca 크리티컬 분석 | `arca.live/b/mapleland/114593305` | **표도 크리 합연산 확정** — 트스/럭세 마스터리 무관, 샤프 효과 정확 산식 |
+| **메이플 플래닛 마갤 (허밋기준 잠재 크확)** | 저장본: [`참고/maplanet-허밋-크확-효율.html`](참고/maplanet-허밋-크확-효율.html) | **크리 합연산 확정 — 메플플 직접 출처**. "스킬 1타수 퍼뎀에 크리티컬 데미지만큼 합연산" |
+| arca 크리티컬 분석 | `arca.live/b/mapleland/114593305` | 표도 크리 합연산 — 트스/럭세 마스터리 무관, 샤프 효과 정확 산식. 옛메 출처지만 메플플 동일 검증됨 |
 | MapleLegends Nise's Formula | `forum.legends.ml/threads/nises-formula-compilation.36234` | 도적 표창 일반 공격력 공식 `(LUK × 3.6 + DEX) × WA / 100` |
 
 ### 데이터 출처
@@ -357,10 +381,14 @@ oneHitMult = (1 + 총뎀%/100) × 보스배율   ← 쉐파/타수 제외
 - [x] **스킬 레벨별 정확 데이터** (옛메 자료 기반)
 - [x] **LS/TT 특수 공식** (LUK × 5/2.5) 적용
 - [x] **1타 데미지 범위** 표시 (인게임 검증용)
+- [x] **메플플 LUK 5/2.5 상수 인게임 검증** — WDEF 800/235 다중 셋업에서 +/-1% 이내 fit 확인 (2026-05-28)
+- [x] **표창 도적 부스탯에 STR 합산** — `(LUK × 3.6 + DEX + STR) × WA / 100`, 표기 STR 입력칸 (2026-05-28)
+- [x] **크리 데미지 곱연산 → 합연산** — `stat × (skillDmg + perCrit) / 100` (2026-05-28)
+- [ ] **WDEF / D (몹레벨 - 캐릭레벨) 입력** + 데미지 식에 반영 — 일반몹 데이터는 `기존/data/mapleland_monsters.json` 활용 가능
 - [ ] 어벤저 / 드레인 / 쉐도우 웹 등 다른 도적 스킬 미지원
 - [ ] 다른 직업 (마법사 / 전사 / 궁수) 별도 calc 필요
 - [ ] 방무% 미지원 (메플플에 무관)
 - [ ] 원소상성 미지원 (도적 무속성)
-- [ ] 보스 마법방어 / 물리방어 무시 X
+- [ ] 보스 마법방어 / 물리방어 무시 X (보스는 별도 PDD 식)
 - [ ] 보스 HP 입력해서 N방컷 계산 미구현
-- [ ] **메플플 LUK 5/2.5 상수 인게임 검증** 필요 — 트스 1타 데미지 측정해서 calc 범위와 일치하는지 확인
+- [ ] 쓸샾 장갑 자체 보장의 sharp 등급 검증 (현재 `usable` = 10/15 가정 — 메플플 실제값 다를 가능성)

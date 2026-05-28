@@ -4,3 +4,10 @@
 node_modules/
 .env
 .env.local
+
+# 사용자가 브라우저에서 Save Page As 한 환산기 스냅샷 (디버깅용, 상태 캡쳐)
+메이플 플래닛 — 도적 트스 환산.html
+메이플 플래닛 — 도적 트스 환산_files/
+
+# Save Page As 자산 폴더 (이미지/JS/CSS — 본문만 보존, 자산은 외부 의존)
+현재/도적-트스/참고/*_files/
