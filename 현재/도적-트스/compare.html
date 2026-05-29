@@ -376,7 +376,7 @@
               <label>
                 <span class="text-slate-600">20북 <span class="text-slate-400">(10→20, 70%)</span></span>
                 <div class="flex items-center gap-1 mt-1">
-                  <input type="number" id="book20-price" placeholder="0" min="0" class="w-full px-2 py-1 border border-slate-300 rounded text-sm text-center font-mono">
+                  <input type="number" id="book20-price" placeholder="0" min="0" step="0.1" class="w-full px-2 py-1 border border-slate-300 rounded text-sm text-center font-mono">
                   <span class="text-slate-400 text-[10px]">억</span>
                 </div>
                 <div class="text-[9px] text-slate-400 mt-0.5">기대 <span id="book20-exp" class="font-mono">0</span>억</div>
@@ -384,7 +384,7 @@
               <label>
                 <span class="text-slate-600">30북 <span class="text-slate-400">(20→30, 50%)</span></span>
                 <div class="flex items-center gap-1 mt-1">
-                  <input type="number" id="book30-price" placeholder="0" min="0" class="w-full px-2 py-1 border border-slate-300 rounded text-sm text-center font-mono">
+                  <input type="number" id="book30-price" placeholder="0" min="0" step="0.1" class="w-full px-2 py-1 border border-slate-300 rounded text-sm text-center font-mono">
                   <span class="text-slate-400 text-[10px]">억</span>
                 </div>
                 <div class="text-[9px] text-slate-400 mt-0.5">기대 <span id="book30-exp" class="font-mono">0</span>억</div>
@@ -481,8 +481,8 @@
               </label>
             </div>
             <div class="bg-emerald-50 rounded p-2">
-              <label class="text-xs"><span class="text-slate-600 font-semibold">가격 <span class="text-slate-400">(억 메소 · 소수 버림 · 비교탭 효율 계산용)</span></span>
-                <input type="number" id="f-price" placeholder="0" min="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center font-mono">
+              <label class="text-xs"><span class="text-slate-600 font-semibold">가격 <span class="text-slate-400">(억 메소 · 소수 OK · 비교탭 효율 계산용)</span></span>
+                <input type="number" id="f-price" placeholder="0" min="0" step="0.1" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center font-mono">
               </label>
             </div>
             <div class="flex gap-2 pt-2">
@@ -706,8 +706,8 @@
           bossdmg: isWeapon ? (+document.getElementById('f-bossdmg').value || 0) : 0,
           // 장갑 전용
           sseulshap: fSlot.value === '장갑' ? document.getElementById('f-sseulshap').checked : false,
-          // 가격 (억, 소수 버림)
-          price: Math.floor(+document.getElementById('f-price').value || 0),
+          // 가격 (억, 소수 허용)
+          price: +document.getElementById('f-price').value || 0,
         };
       }
       function clearForm() {
@@ -1416,8 +1416,8 @@
           shadowLv: +document.getElementById('shadow-lv').value || 0,
           masteryLv: +document.getElementById('mastery-lv').value || 0,
           mwLv: +document.getElementById('mw-lv').value || 0,
-          book20Price: Math.floor(+document.getElementById('book20-price').value || 0),
-          book30Price: Math.floor(+document.getElementById('book30-price').value || 0),
+          book20Price: +document.getElementById('book20-price').value || 0,
+          book30Price: +document.getElementById('book30-price').value || 0,
         };
       }
 
@@ -1738,13 +1738,14 @@
           let effHtml = '';
           if (!isBase && extra.cost && pct > 0) {
             const c = extra.cost;
+            const m = n => { const r = Math.round(n * 10) / 10; return Number.isInteger(r) ? String(r) : r.toFixed(1); };
             if (c.total > 0) {
               const eff = pct / c.total;
               const costParts = [];
-              if (c.itemCost > 0) costParts.push(`템 ${c.itemCost}억`);
-              if (c.bookCost > 0) costParts.push(`${c.books.join('+')} ${c.bookCost.toFixed(1)}억`);
+              if (c.itemCost > 0) costParts.push(`템 ${m(c.itemCost)}억`);
+              if (c.bookCost > 0) costParts.push(`${c.books.join('+')} ${m(c.bookCost)}억`);
               effHtml = `<div class="text-[10px] font-bold text-emerald-600">${eff.toFixed(2)}%/억</div>
-                         <div class="text-[9px] text-slate-400">${costParts.join(' + ')} = ${c.total.toFixed(1)}억</div>`;
+                         <div class="text-[9px] text-slate-400">${costParts.join(' + ')} = ${m(c.total)}억</div>`;
             } else {
               effHtml = `<div class="text-[9px] text-slate-400">비용 0 (가격 미입력)</div>`;
             }
