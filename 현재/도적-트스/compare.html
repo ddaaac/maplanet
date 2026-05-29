@@ -362,6 +362,35 @@
               비교 결과
             </h2>
             <div id="compare-results" class="space-y-1.5"></div>
+            <p class="text-[9px] text-slate-400 mt-1.5">효율 = 데미지 증가% ÷ 새로 사는 비용(억). 높을수록 가성비 좋음.</p>
+          </section>
+
+          <!-- 스킬북 가격 (트스 전용) -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
+              <span class="inline-block w-1 h-3 bg-emerald-500 rounded"></span>
+              트스 스킬북 가격
+              <span class="text-[10px] text-slate-400 font-normal ml-auto">기대비용 = 가격 ÷ 성공률</span>
+            </h2>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <label>
+                <span class="text-slate-600">20북 <span class="text-slate-400">(10→20, 70%)</span></span>
+                <div class="flex items-center gap-1 mt-1">
+                  <input type="number" id="book20-price" placeholder="0" min="0" class="w-full px-2 py-1 border border-slate-300 rounded text-sm text-center font-mono">
+                  <span class="text-slate-400 text-[10px]">억</span>
+                </div>
+                <div class="text-[9px] text-slate-400 mt-0.5">기대 <span id="book20-exp" class="font-mono">0</span>억</div>
+              </label>
+              <label>
+                <span class="text-slate-600">30북 <span class="text-slate-400">(20→30, 50%)</span></span>
+                <div class="flex items-center gap-1 mt-1">
+                  <input type="number" id="book30-price" placeholder="0" min="0" class="w-full px-2 py-1 border border-slate-300 rounded text-sm text-center font-mono">
+                  <span class="text-slate-400 text-[10px]">억</span>
+                </div>
+                <div class="text-[9px] text-slate-400 mt-0.5">기대 <span id="book30-exp" class="font-mono">0</span>억</div>
+              </label>
+            </div>
+            <p class="text-[9px] text-slate-400 mt-1.5">럭키세븐은 스킬북 불필요. 기준→프리셋 트스 레벨이 10/20 경계를 넘으면 자동 반영 (프리셋 체크박스로 on/off).</p>
           </section>
         </aside>
       </div>
@@ -449,6 +478,11 @@
             <div id="f-extra" class="hidden bg-slate-50 rounded p-2">
               <label class="text-xs flex items-center gap-1">
                 <input type="checkbox" id="f-sseulshap"> <span class="text-slate-600">쓸샾 포함 (장갑 한정 — 크확 +10, 크댐 +15)</span>
+              </label>
+            </div>
+            <div class="bg-emerald-50 rounded p-2">
+              <label class="text-xs"><span class="text-slate-600 font-semibold">가격 <span class="text-slate-400">(억 메소 · 소수 버림 · 비교탭 효율 계산용)</span></span>
+                <input type="number" id="f-price" placeholder="0" min="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center font-mono">
               </label>
             </div>
             <div class="flex gap-2 pt-2">
@@ -550,6 +584,7 @@
           atkp: s.atkp || 0,
           reqDex: s.reqDex || 0,
           sseulshap: false,
+          price: s.price || 0,
         }));
         // 자동 장착: 슬롯에 단 하나뿐인 아이템 자동 셋팅
         loadout = {};
@@ -671,12 +706,14 @@
           bossdmg: isWeapon ? (+document.getElementById('f-bossdmg').value || 0) : 0,
           // 장갑 전용
           sseulshap: fSlot.value === '장갑' ? document.getElementById('f-sseulshap').checked : false,
+          // 가격 (억, 소수 버림)
+          price: Math.floor(+document.getElementById('f-price').value || 0),
         };
       }
       function clearForm() {
         document.getElementById('f-id').value = '';
         document.getElementById('f-name').value = '';
-        ['f-luk','f-dex','f-allstat','f-atk','f-lukp','f-dexp','f-allstatp','f-atkp','f-totaldmg','f-critrate','f-bossdmg','f-reqdex'].forEach(id => document.getElementById(id).value = '');
+        ['f-luk','f-dex','f-allstat','f-atk','f-lukp','f-dexp','f-allstatp','f-atkp','f-totaldmg','f-critrate','f-bossdmg','f-reqdex','f-price'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('f-sseulshap').checked = false;
         document.getElementById('form-title').textContent = '새 아이템';
         fPresetSel.value = '';
@@ -701,6 +738,7 @@
         document.getElementById('f-bossdmg').value = it.bossdmg || '';
         document.getElementById('f-reqdex').value = it.reqDex || '';
         document.getElementById('f-sseulshap').checked = !!it.sseulshap;
+        document.getElementById('f-price').value = it.price || '';
         document.getElementById('form-title').textContent = `편집: ${it.name}`;
       }
 
@@ -780,6 +818,7 @@
         if (it.atk) parts.push(`공 ${it.atk}`);
         if (it.atkp) parts.push(`공% ${it.atkp}`);
         if (it.reqDex) parts.push(`<span class="text-rose-600">요구DEX ${it.reqDex}</span>`);
+        if (it.price) parts.push(`<span class="text-emerald-600">${it.price}억</span>`);
         return parts.join(' / ') || '-';
       }
 
@@ -931,6 +970,18 @@
             : 'px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 hover:bg-slate-200 text-[10px]';
           const baseBtnLabel = isBase ? '📌 기준' : '📌 기준 지정';
 
+          // 스킬북 체크박스 — 트스 + atkLv ≥ 11 인 스냅샷일 때만 노출
+          const snapSkill = preset.snapshot ? preset.snapshot.atkSkill : null;
+          const snapAtkLv = preset.snapshot ? (preset.snapshot.atkLv || 0) : 0;
+          const showBookToggle = snapSkill === 'trs' && snapAtkLv >= 11;
+          const useBook = preset.useBook !== false; // 기본 포함
+          const bookToggleHtml = showBookToggle
+            ? `<label class="flex items-center gap-1 text-[10px] text-emerald-700 cursor-pointer">
+                 <input type="checkbox" data-book-toggle="${preset.id}" ${useBook ? 'checked' : ''}>
+                 스킬북 비용 포함 (트스 ${snapAtkLv})
+               </label>`
+            : '';
+
           card.innerHTML = `
             <div class="flex gap-2 items-center">
               <input type="text" data-preset="${preset.id}" data-field="name" value="${preset.name || ''}" placeholder="프리셋 이름"
@@ -939,6 +990,7 @@
               <button type="button" data-preset-del="${preset.id}" class="text-xs text-red-500 hover:underline">프리셋 삭제</button>
             </div>
             ${snapHtml}
+            ${bookToggleHtml}
           `;
           list.appendChild(card);
         });
@@ -948,6 +1000,15 @@
           inp.addEventListener('input', () => {
             const p = compares.find(c => c.id === inp.dataset.preset);
             if (p) p.name = inp.value;
+            save();
+            recalc();
+          });
+        });
+        // 스킬북 포함 토글
+        list.querySelectorAll('[data-book-toggle]').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const p = compares.find(c => c.id === cb.dataset.bookToggle);
+            if (p) p.useBook = cb.checked;
             save();
             recalc();
           });
@@ -1355,8 +1416,13 @@
           shadowLv: +document.getElementById('shadow-lv').value || 0,
           masteryLv: +document.getElementById('mastery-lv').value || 0,
           mwLv: +document.getElementById('mw-lv').value || 0,
+          book20Price: Math.floor(+document.getElementById('book20-price').value || 0),
+          book30Price: Math.floor(+document.getElementById('book30-price').value || 0),
         };
       }
+
+      // 스킬북 성공률 (기대비용 = 가격 ÷ 성공률)
+      const BOOK_RATE = { b20: 0.7, b30: 0.5 };
 
       function saveConfig() {
         localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(readOpts()));
@@ -1377,11 +1443,22 @@
         });
         if (savedConfig.horntail != null) document.getElementById('horntail').checked = savedConfig.horntail;
         if (savedConfig.boss != null) document.getElementById('boss-mode').checked = savedConfig.boss;
+        if (savedConfig.book20Price != null) document.getElementById('book20-price').value = savedConfig.book20Price || '';
+        if (savedConfig.book30Price != null) document.getElementById('book30-price').value = savedConfig.book30Price || '';
       }
       applySavedConfig();
 
       function recalc() {
         const opts = readOpts();
+        // 스킬북 기대비용 표시 (프리셋 유무 무관하게 항상 갱신)
+        {
+          const b20 = opts.book20Price ? (opts.book20Price / BOOK_RATE.b20) : 0;
+          const b30 = opts.book30Price ? (opts.book30Price / BOOK_RATE.b30) : 0;
+          const e20 = document.getElementById('book20-exp');
+          const e30 = document.getElementById('book30-exp');
+          if (e20) e20.textContent = b20 ? b20.toFixed(1) : '0';
+          if (e30) e30.textContent = b30 ? b30.toFixed(1) : '0';
+        }
         // base loadout equip
         const baseEquip = SLOTS.map(s => loadout[s] ? items.find(i => i.id === loadout[s]) : null).filter(Boolean);
         const baseStats = computeStats(baseEquip, opts);
@@ -1584,6 +1661,44 @@
           }
         }
 
+        // 2.5단계: 비용 계산용 기준 loadout / 스킬레벨 결정
+        let costBaseLoadout = loadout;
+        let costBaseAtkLv = opts.atkLv;
+        if (basePresetId) {
+          const bp = compares.find(c => c.id === basePresetId);
+          if (bp && bp.snapshot) {
+            if (bp.snapshot.loadout) costBaseLoadout = bp.snapshot.loadout;
+            if (bp.snapshot.atkLv != null) costBaseAtkLv = bp.snapshot.atkLv;
+          }
+        }
+        const book20Price = opts.book20Price || 0;
+        const book30Price = opts.book30Price || 0;
+
+        // 프리셋 비용 = 새로 사는 아이템 가격 합 + (트스 스킬북 기대비용, 체크 시)
+        function presetCost(preset) {
+          const pl = (preset.snapshot && preset.snapshot.loadout) ? preset.snapshot.loadout : loadout;
+          const pAtkLv = (preset.snapshot && preset.snapshot.atkLv != null) ? preset.snapshot.atkLv : opts.atkLv;
+          const pSkill = (preset.snapshot && preset.snapshot.atkSkill) ? preset.snapshot.atkSkill : opts.atkSkill;
+          let itemCost = 0;
+          SLOTS.forEach(s => {
+            const pid = pl[s];
+            if (pid && pid !== costBaseLoadout[s]) {
+              const it = items.find(i => i.id === pid);
+              if (it) itemCost += (it.price || 0);
+            }
+          });
+          let bookCost = 0;
+          const books = [];
+          const useBook = preset.useBook !== false; // 기본 포함
+          const need20 = pSkill === 'trs' && costBaseAtkLv <= 10 && pAtkLv >= 11;
+          const need30 = pSkill === 'trs' && costBaseAtkLv <= 20 && pAtkLv >= 21;
+          if (useBook) {
+            if (need20 && book20Price) { bookCost += book20Price / BOOK_RATE.b20; books.push('20북'); }
+            if (need30 && book30Price) { bookCost += book30Price / BOOK_RATE.b30; books.push('30북'); }
+          }
+          return { itemCost, bookCost, total: itemCost + bookCost, books, bookNeeded: (need20 || need30), useBook };
+        }
+
         // 기준 label (basePresetId 있을 때)
         if (cmpBaseName) {
           const banner = document.createElement('div');
@@ -1618,6 +1733,23 @@
           const warnHtml = (stats && stats.inactiveIds && stats.inactiveIds.size > 0)
             ? `<div class="text-[10px] text-rose-600 font-semibold">⚠ ${stats.inactiveIds.size}개 미적용 · 필요 DEX ${stats.requiredBaseDex} (-${Math.max(0, stats.requiredBaseDex - opts2.baseDex)})</div>`
             : '';
+
+          // 효율 (%/억) — 비용 정보 있고, 기준 아니고, 데미지 상승일 때만
+          let effHtml = '';
+          if (!isBase && extra.cost && pct > 0) {
+            const c = extra.cost;
+            if (c.total > 0) {
+              const eff = pct / c.total;
+              const costParts = [];
+              if (c.itemCost > 0) costParts.push(`템 ${c.itemCost}억`);
+              if (c.bookCost > 0) costParts.push(`${c.books.join('+')} ${c.bookCost.toFixed(1)}억`);
+              effHtml = `<div class="text-[10px] font-bold text-emerald-600">${eff.toFixed(2)}%/억</div>
+                         <div class="text-[9px] text-slate-400">${costParts.join(' + ')} = ${c.total.toFixed(1)}억</div>`;
+            } else {
+              effHtml = `<div class="text-[9px] text-slate-400">비용 0 (가격 미입력)</div>`;
+            }
+          }
+
           const row = document.createElement('div');
           const bg = isBase ? 'bg-orange-50 border border-orange-200' : 'bg-slate-50';
           row.className = `flex items-center justify-between gap-2 ${bg} rounded p-2`;
@@ -1630,6 +1762,7 @@
             <div class="text-right">
               <div class="font-mono font-bold text-sm">${dmg.expected.toLocaleString()}</div>
               <div class="text-[10px] font-semibold ${color}">${pctLabel}</div>
+              ${effHtml}
             </div>
           `;
           wrap.appendChild(row);
@@ -1653,6 +1786,7 @@
               snapBadge,
               isBase,
               sub: preset.snapshot ? '캡쳐된 셋업' : '캡쳐 없음 — 현재 셋업과 동일',
+              cost: presetCost(preset),
             }
           );
         });
@@ -1707,10 +1841,10 @@
       document.getElementById('base-luk').addEventListener('change', e => validateBaseMin(e.target, 'LUK', 13));
       document.getElementById('base-dex').addEventListener('change', e => validateBaseMin(e.target, 'DEX', 4));
 
-      // 레벨 / 스킬 / 표기 STR 변경 시 재계산
+      // 레벨 / 스킬 / 표기 STR / 스킬북 가격 변경 시 재계산
       document.getElementById('char-level').addEventListener('input', recalc);
       document.getElementById('disp-str').addEventListener('input', recalc);
-      ['atk-lv','critthrow-lv','shadow-lv','mastery-lv','mw-lv'].forEach(id => {
+      ['atk-lv','critthrow-lv','shadow-lv','mastery-lv','mw-lv','book20-price','book30-price'].forEach(id => {
         document.getElementById(id).addEventListener('input', recalc);
       });
       ['sharp','atk-skill'].forEach(id => document.getElementById(id).addEventListener('change', recalc));
