@@ -360,6 +360,8 @@
             <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
               <span class="inline-block w-1 h-3 bg-orange-500 rounded"></span>
               비교 결과
+              <button type="button" id="cmp-refresh" title="새로고침 (아이템/스탯 변경 반영)"
+                class="ml-auto text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 font-normal">🔄 새로고침</button>
             </h2>
             <div id="compare-results" class="space-y-1.5"></div>
             <p class="text-[9px] text-slate-400 mt-1.5">효율 = 데미지 증가% ÷ 새로 사는 비용(억). 높을수록 가성비 좋음.</p>
@@ -767,6 +769,7 @@
         renderItemList();
         renderLoadout();
         renderCompareList();
+        recalc(); // 아이템 변경 즉시 비교/결과 반영
       });
       document.getElementById('f-clear').addEventListener('click', clearForm);
 
@@ -987,15 +990,21 @@
             : 'px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 hover:bg-slate-200 text-[10px]';
           const baseBtnLabel = isBase ? '📌 기준' : '📌 기준 지정';
 
-          // 스킬북 체크박스 — 트스 + atkLv ≥ 11 인 스냅샷일 때만 노출
+          // 스킬북 체크박스 — 기준 트스 레벨 대비 실제로 북이 필요할 때만 노출
+          //   (기준이 트스20이면 트스20 프리셋엔 북 비용 없음 → 체크박스 X)
           const snapSkill = preset.snapshot ? preset.snapshot.atkSkill : null;
           const snapAtkLv = preset.snapshot ? (preset.snapshot.atkLv || 0) : 0;
-          const showBookToggle = snapSkill === 'trs' && snapAtkLv >= 11;
+          const baseAtkLv = (cmpOpts.atkSkill === 'trs') ? (cmpOpts.atkLv || 0) : 0;
+          const isSelfBase = basePresetId === preset.id;
+          const bookNeed20 = snapSkill === 'trs' && baseAtkLv <= 10 && snapAtkLv >= 11;
+          const bookNeed30 = snapSkill === 'trs' && baseAtkLv <= 20 && snapAtkLv >= 21;
+          const showBookToggle = !isSelfBase && (bookNeed20 || bookNeed30);
+          const neededBooks = [bookNeed20 ? '20북' : null, bookNeed30 ? '30북' : null].filter(Boolean).join('+');
           const useBook = preset.useBook !== false; // 기본 포함
           const bookToggleHtml = showBookToggle
             ? `<label class="flex items-center gap-1 text-[10px] text-emerald-700 cursor-pointer">
                  <input type="checkbox" data-book-toggle="${preset.id}" ${useBook ? 'checked' : ''}>
-                 스킬북 비용 포함 (트스 ${snapAtkLv})
+                 스킬북 비용 포함 (${neededBooks} · 트스 ${baseAtkLv}→${snapAtkLv})
                </label>`
             : '';
 
@@ -1899,6 +1908,8 @@
       // 레벨 변경 시 부스탯 고정 + 주스탯 자동 (change: 타이핑 끝나면 1회)
       document.getElementById('char-level').addEventListener('change', relinkLukFromLevel);
       document.getElementById('disp-str').addEventListener('input', recalc);
+      // 비교 결과 새로고침 버튼 (아이템/스탯 변경 수동 반영)
+      document.getElementById('cmp-refresh').addEventListener('click', () => { renderPresetList(); recalc(); });
       ['atk-lv','critthrow-lv','shadow-lv','mastery-lv','mw-lv','book20-price','book30-price'].forEach(id => {
         document.getElementById(id).addEventListener('input', recalc);
       });
