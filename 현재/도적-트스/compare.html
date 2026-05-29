@@ -742,6 +742,18 @@
         document.getElementById('form-title').textContent = `편집: ${it.name}`;
       }
 
+      // 저장된 아이템을 새 아이템 폼으로 복사 (id 비워서 새로 저장되게)
+      function copyToForm(it) {
+        loadToForm(it);
+        document.getElementById('f-id').value = '';
+        document.getElementById('f-name').value = (it.name || '') + ' 복사';
+        document.getElementById('form-title').textContent = '새 아이템 (복사)';
+        fPresetSel.value = '';
+        document.getElementById('form-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('f-name').focus();
+        document.getElementById('f-name').select();
+      }
+
       document.getElementById('f-save').addEventListener('click', () => {
         const it = readForm();
         if (it.id) {
@@ -784,6 +796,7 @@
                 <div class="text-slate-500 text-[10px]">${itemSummary(it)}</div>
               </div>
               <button class="text-blue-600 hover:underline" data-act="edit" data-id="${it.id}">편집</button>
+              <button class="text-emerald-600 hover:underline" data-act="copy" data-id="${it.id}">복사</button>
               <button class="text-red-500 hover:underline" data-act="del" data-id="${it.id}">삭제</button>
             `;
             ul.appendChild(row);
@@ -792,6 +805,10 @@
         ul.querySelectorAll('[data-act="edit"]').forEach(b => b.addEventListener('click', () => {
           const it = items.find(x => x.id === b.dataset.id);
           if (it) loadToForm(it);
+        }));
+        ul.querySelectorAll('[data-act="copy"]').forEach(b => b.addEventListener('click', () => {
+          const it = items.find(x => x.id === b.dataset.id);
+          if (it) copyToForm(it);
         }));
         ul.querySelectorAll('[data-act="del"]').forEach(b => b.addEventListener('click', () => {
           if (!confirm('삭제할까?')) return;
