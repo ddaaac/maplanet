@@ -52,8 +52,8 @@
       <!-- ===================== 환산 탭 ===================== -->
       <div data-panel="calc" class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
         <div class="space-y-3">
-          <!-- 프리셋 불러오기 -->
-          <section class="bg-white rounded-lg border border-slate-200 px-3 py-2">
+          <!-- 프리셋 불러오기 / 기준 갱신 -->
+          <section class="bg-white rounded-lg border border-slate-200 px-3 py-2 space-y-1.5">
             <div class="flex items-center gap-2">
               <span class="text-xs font-semibold text-slate-600 whitespace-nowrap flex items-center gap-1">
                 <span class="inline-block w-1 h-3 bg-orange-500 rounded"></span>프리셋 불러오기
@@ -61,7 +61,10 @@
               <select id="calc-preset-sel" class="flex-1 min-w-0 px-2 py-1 border border-slate-300 rounded text-xs"></select>
               <button type="button" id="calc-preset-load" class="text-xs px-3 py-1 rounded bg-orange-500 text-white hover:bg-orange-600 whitespace-nowrap">불러오기</button>
             </div>
-            <p class="text-[9px] text-slate-400 mt-1">선택한 프리셋의 장비·캐릭터·스킬·버프를 현재 셋업으로 덮어씀. 📌 = 기준 프리셋.</p>
+            <div class="flex items-center gap-2 pt-1.5 border-t border-slate-100">
+              <span class="text-[10px] text-slate-500 flex-1">스펙업했으면 → 현재 셋업을 새 기준으로, 다른 프리셋들은 변경분만 유지하고 자동 리베이스</span>
+              <button type="button" id="calc-rebase" class="text-xs px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 whitespace-nowrap">🔄 기준 갱신</button>
+            </div>
           </section>
 
           <!-- 캐릭터 (컴팩트) -->
@@ -1195,6 +1198,49 @@
         if (!confirm(`'${p.name || '프리셋'}' 의 캡쳐 상태로 현재 셋업 전체를 덮어쓸까?`)) return;
         applyPresetSnapshot(p);
       });
+
+      // 기준 갱신(리베이스): 현재 셋업을 새 기준으로, 다른 프리셋은 (옛 기준 대비) 변경분만 유지하고 새 기준 위에 재적용
+      const REBASE_OPTS_KEYS = ['level','baseLuk','baseDex','dispStr','sharp','horntail','boss','atkSkill','atkLv','critthrowLv','shadowLv','masteryLv','mwLv','book20Price','book30Price'];
+      function rebaseToCurrentSetup() {
+        if (!basePresetId) { alert('기준 프리셋을 먼저 지정하세요. (비교 탭에서 프리셋의 📌 기준 지정)'); return; }
+        const basePreset = compares.find(c => c.id === basePresetId);
+        if (!basePreset || !basePreset.snapshot) { alert('기준 프리셋에 캡쳐된 상태가 없습니다.'); return; }
+        const oldBase = basePreset.snapshot;
+        const newBase = { ...readOpts(), loadout: { ...loadout } };
+        const others = compares.filter(c => c.id !== basePresetId && c.snapshot);
+
+        const lines = others.map(p => {
+          const diffs = [];
+          REBASE_OPTS_KEYS.forEach(k => { if (p.snapshot[k] !== oldBase[k]) diffs.push(k); });
+          const sLo = p.snapshot.loadout || {}, oLo = oldBase.loadout || {};
+          SLOTS.forEach(s => { if ((sLo[s]||'') !== (oLo[s]||'')) diffs.push(s); });
+          return `· ${p.name || '(이름없음)'}: 변경분 ${diffs.length}개 유지`;
+        });
+        if (!confirm(`현재 셋업을 새 기준으로 삼고, 다른 프리셋 ${others.length}개를 리베이스합니다.\n각 프리셋은 옛 기준 대비 자기 변경분만 유지하고 나머지는 새 기준을 따라갑니다.\n\n${lines.join('\n') || '(리베이스할 다른 프리셋 없음 — 기준만 갱신)'}\n\n진행할까요?`)) return;
+
+        // 기준 프리셋 = 새 기준
+        basePreset.snapshot = { ...newBase, loadout: { ...newBase.loadout } };
+        // 나머지 = 새 기준 + 자기 델타
+        others.forEach(p => {
+          const s = p.snapshot;
+          const ns = { ...newBase };
+          REBASE_OPTS_KEYS.forEach(k => { if (s[k] !== oldBase[k]) ns[k] = s[k]; });
+          const sLo = s.loadout || {}, oLo = oldBase.loadout || {};
+          const nLo = { ...newBase.loadout };
+          SLOTS.forEach(slot => {
+            const pItem = sLo[slot] || '', oItem = oLo[slot] || '';
+            if (pItem !== oItem) { if (pItem) nLo[slot] = pItem; else delete nLo[slot]; }
+          });
+          ns.loadout = nLo;
+          p.snapshot = ns;
+        });
+
+        save();
+        renderPresetList();
+        recalc();
+        alert(`기준 갱신 완료 — 프리셋 ${others.length}개 리베이스됨.`);
+      }
+      document.getElementById('calc-rebase').addEventListener('click', rebaseToCurrentSetup);
 
       // ============== 계산 공식 ==============
       // 풀합산 모델 + floor + 도적 표창 일반공격력 공식
