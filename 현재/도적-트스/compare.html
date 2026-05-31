@@ -1245,17 +1245,20 @@
       // ============== 계산 공식 ==============
       // 풀합산 모델 + floor + 도적 표창 일반공격력 공식
       function computeStats(equip, opts) {
-        // 메용 % = ceil(Lv/2), 순수 AP 만 boost (floor)
+        // 메용 % = ceil(Lv/2). 순수 base AP 기준 flat 보너스, 기어% 곱셈 '밖'에서 합산 (인게임 검증 2026-05-30)
+        //   total = floor((base + gearFlat) × (1+gear%)) + floor(base × 메용%)   ← 메용은 기어% 영향 X
         const mwLv = opts.mwLv || 0;
         const mwPct = mwLv > 0 ? Math.ceil(mwLv / 2) : 0;
-        const baseLuk = opts.baseLuk + Math.floor(opts.baseLuk * mwPct / 100);
-        const baseDex = opts.baseDex + Math.floor(opts.baseDex * mwPct / 100);
+        const baseLuk = opts.baseLuk; // 메용 미포함 (곱셈용 순수 base)
+        const baseDex = opts.baseDex;
+        const mwBoostLuk = Math.floor(opts.baseLuk * mwPct / 100);
+        const mwBoostDex = Math.floor(opts.baseDex * mwPct / 100);
 
         // 부스탯 cycle (교차활성화 model — 정보글 기준)
-        //   각 장비 활성 조건: (base + 자기 제외 다른 활성 장비 sumDex) × (1 + 활성 장비 dex%+올% / 100) ≥ reqDex
+        //   각 장비 활성 조건: floor((base + 다른 활성 sumDex) × (1 + dex%+올%/100)) + 메용flat ≥ reqDex
         //   "자기 자신은 자기 활성에 기여 못 함" — 다른 활성 장비들이 자기를 활성시켜줘야 함 (교차 가능)
         function simulateCycle(baseAp) {
-          const boostedBase = baseAp + Math.floor(baseAp * mwPct / 100);
+          const mwFlat = Math.floor(baseAp * mwPct / 100); // 메용 flat (기어% 밖)
           let act = equip.filter(Boolean);
           const inactive = new Set();
           for (let safety = 0; safety < act.length + 2; safety++) {
@@ -1268,7 +1271,7 @@
                 sdp += x.dexp || 0;
                 sap += x.allstatp || 0;
               });
-              const tdWithoutMe = Math.floor((boostedBase + sd) * (1 + (sdp + sap) / 100));
+              const tdWithoutMe = Math.floor((baseAp + sd) * (1 + (sdp + sap) / 100)) + mwFlat;
               return tdWithoutMe < it.reqDex;
             });
             if (drop.length === 0) break;
@@ -1314,8 +1317,8 @@
         const totalLukP = sumLukP + sumAllstatP;
         const totalDexP = sumDexP + sumAllstatP;
 
-        const totalLuk = Math.floor((baseLuk + sumLuk) * (1 + totalLukP / 100));
-        const totalDex = Math.floor((baseDex + sumDex) * (1 + totalDexP / 100));
+        const totalLuk = Math.floor((baseLuk + sumLuk) * (1 + totalLukP / 100)) + mwBoostLuk;
+        const totalDex = Math.floor((baseDex + sumDex) * (1 + totalDexP / 100)) + mwBoostDex;
         // STR: 표창 도적 부스탯 = STR + DEX. 사용자가 인게임 표기값 직접 입력 (계산 안 함).
         const dispStr = opts.dispStr || 0;
 
@@ -1353,7 +1356,8 @@
           sumLuk, sumDex, sumLukP, sumDexP, sumAllstatP, sumAtkP, sumAtkOther,
           sumTotalDmg, sumCritRate, sumBossDmg,
           weaponAtk, thrAtk,
-          inactiveIds, mwPct, baseLukBoosted: baseLuk, baseDexBoosted: baseDex,
+          inactiveIds, mwPct, mwBoostLuk, mwBoostDex,
+          baseLukBoosted: baseLuk + mwBoostLuk, baseDexBoosted: baseDex + mwBoostDex,
           requiredBaseDex: requiredBase, reqSteps,
         };
       }
