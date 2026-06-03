@@ -104,7 +104,7 @@
           <!-- 현재 장비 -->
           <section class="bg-white rounded-lg border border-slate-200 p-3">
             <h2 class="font-semibold text-sm mb-2">현재 장비</h2>
-            <div id="loadout-grid" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-x-2 gap-y-1.5"></div>
+            <div id="loadout-grid" class="space-y-1.5"></div>
           </section>
 
 
@@ -210,8 +210,9 @@
                     <span class="absolute left-0 top-full mt-1 z-30 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[10px] leading-relaxed rounded p-2 w-64 shadow-lg whitespace-normal font-normal">
                       <strong class="text-orange-300">무기공격력 (WA)</strong><br>
                       데미지 공식의 "공격력" 합산값.<br><br>
-                      <code class="text-orange-200">= floor(무기 깡공 × (1 + 공격력%/100))<br>+ 표창 공격력 + 장갑 공격력<br>+ 혼테일(+30)</code><br><br>
-                      공격력%는 무기 깡공에만 적용. 표창/장갑/버프는 따로 더해짐.
+                      <code class="text-orange-200">= floor((무기깡공 + 장갑깡공) × (1 + 공격력%/100))<br>+ 표창 공격력 + 혼테일(+30)</code><br><br>
+                      공격력%는 <strong>(무기+장갑) 깡공 합산</strong>에 적용. 표창/혼테/버프는 따로 더해짐.<br>
+                      (자막/허밋 자료 모델)
                     </span>
                   </span>
                 </div>
@@ -347,14 +348,41 @@
                 <div id="summary-stat" class="grid grid-cols-4 gap-1.5"></div>
               </div>
               <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">공격력 <span class="text-orange-500">공%O</span> / <span class="text-slate-600">공%X</span></div>
-                <div id="summary-atk" class="grid grid-cols-3 gap-1.5"></div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">공격력 <span class="text-orange-500">공%적용 (무기+장갑)</span> / <span class="text-slate-600">공%X (표창)</span></div>
+                <div id="summary-atk" class="grid grid-cols-2 gap-1.5"></div>
               </div>
               <div>
                 <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">무기 잠재</div>
                 <div id="summary-pot" class="grid grid-cols-4 gap-1.5"></div>
               </div>
             </div>
+          </section>
+
+          <!-- N방컷 계산기 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
+              <span class="inline-block w-1 h-3 bg-red-500 rounded"></span>
+              N방컷 계산기
+              <span class="text-[9px] text-slate-400 normal-case font-normal">정규 근사</span>
+            </h2>
+            <div class="grid grid-cols-3 gap-1.5 mb-2">
+              <label class="text-[10px]">
+                <span class="text-slate-500">몹 HP</span>
+                <input type="number" id="mob-hp" value="80000" min="0" step="1000"
+                  class="w-full mt-0.5 px-1.5 py-1 border border-slate-300 rounded text-xs font-mono">
+              </label>
+              <label class="text-[10px]">
+                <span class="text-slate-500">몹 방어력</span>
+                <input type="number" id="mob-wdef" value="0" min="0"
+                  class="w-full mt-0.5 px-1.5 py-1 border border-slate-300 rounded text-xs font-mono">
+              </label>
+              <label class="text-[10px]">
+                <span class="text-slate-500">몹 Lv</span>
+                <input type="number" id="mob-lv" value="135" min="1" max="250"
+                  class="w-full mt-0.5 px-1.5 py-1 border border-slate-300 rounded text-xs font-mono">
+              </label>
+            </div>
+            <div id="ncut-result" class="text-xs space-y-1.5"></div>
           </section>
         </aside>
       </div>
@@ -563,7 +591,7 @@
     <script>
       // ============== State ==============
       const SLOTS = ['무기','표창','모자','상의','하의','신발','장갑','귀고리','망토','목걸이','훈장','방패','반지'];
-      const STORAGE_KEYS = { items: 'mp_items_v1', loadout: 'mp_loadout_v1', compares: 'mp_compares_v1', config: 'mp_config_v1', userDefault: 'mp_userdefault_v1', basePreset: 'mp_basepreset_v1' };
+      const STORAGE_KEYS = { items: 'mp_items_v1', loadout: 'mp_loadout_v1', compares: 'mp_compares_v1', config: 'mp_config_v1', userDefault: 'mp_userdefault_v1', basePreset: 'mp_basepreset_v1', throwSeeded: 'mp_throw_seeded_v1' };
 
       let items = JSON.parse(localStorage.getItem(STORAGE_KEYS.items) || '[]');
       let loadout = JSON.parse(localStorage.getItem(STORAGE_KEYS.loadout) || '{}'); // {slot: itemId}
@@ -688,14 +716,34 @@
           { name: '일심 아대 (Lv130)',     atk: 105, luk: 5, dex: 5 },
         ],
         '표창': [
-          { name: '일반 수리검 +10',  atk: 10 },
-          { name: '강화 수리검 +15',  atk: 15 },
-          { name: '서리 수리검 +20',  atk: 20 },
-          { name: '뇌전 수리검 +25',  atk: 25 },
-          { name: '황금 수리검 +30',  atk: 30 },
-          { name: '일심 수리검 +35',  atk: 35 },
+          { name: '수비표창', atk: 15 },
+          { name: '월비표창', atk: 17 },
+          { name: '목비표창', atk: 19 },
+          { name: '나무팽이', atk: 19 },
+          { name: '금비표창', atk: 21 },
+          { name: '고드름',   atk: 21 },
+          { name: '토비표창', atk: 23 },
+          { name: '뇌전수리검', atk: 25 },
+          { name: '화비표창', atk: 27 },
+          { name: '일비표창', atk: 27 },
         ],
       };
+
+      // 표창 자동 시드 (한 번만) — 사용자가 직접 만들 일 없으니 PRESETS['표창'] 전체 자동 등록
+      if (!localStorage.getItem(STORAGE_KEYS.throwSeeded)) {
+        const mkThrId = () => String(Date.now()) + Math.random().toString(16).slice(2, 8);
+        const existingThrowNames = new Set(items.filter(i => i.slot === '표창').map(i => i.name));
+        (PRESETS['표창'] || []).forEach(p => {
+          if (existingThrowNames.has(p.name)) return;
+          items.push({
+            id: mkThrId(), slot: '표창', name: p.name,
+            luk: 0, dex: 0, allstat: 0, atk: p.atk || 0,
+            lukp: 0, dexp: 0, allstatp: 0, atkp: 0, reqDex: 0, sseulshap: false,
+          });
+        });
+        localStorage.setItem(STORAGE_KEYS.throwSeeded, '1');
+        save();
+      }
 
       function fillPresetDropdown() {
         const slot = fSlot.value;
@@ -892,23 +940,36 @@
       }
 
       // ============== 장비 슬롯 dropdown ==============
+      // 장비 UI 행별 배치
+      const SLOT_LAYOUT = [
+        ['무기','표창','방패'],
+        ['모자','장갑','상의','하의','신발'],
+        ['귀고리','망토','목걸이','반지'],
+        ['훈장'],
+      ];
       function renderLoadout() {
         const grid = document.getElementById('loadout-grid');
         grid.innerHTML = '';
-        SLOTS.forEach(slot => {
-          const wrap = document.createElement('label');
-          wrap.className = 'flex flex-col min-w-0';
-          const cur = loadout[slot] || '';
-          const opts = items.filter(i => i.slot === slot)
-            .map(i => `<option value="${i.id}" ${i.id === cur ? 'selected' : ''}>${i.name}${i.sseulshap ? '★' : ''}</option>`).join('');
-          wrap.innerHTML = `
-            <span class="text-[10px] text-slate-500 leading-tight">${slot}</span>
-            <select data-slot="${slot}" class="loadout-sel w-full px-1.5 py-1 border border-slate-200 rounded text-xs truncate">
-              <option value="">—</option>
-              ${opts}
-            </select>
-          `;
-          grid.appendChild(wrap);
+        SLOT_LAYOUT.forEach(row => {
+          const rowDiv = document.createElement('div');
+          rowDiv.className = 'grid gap-x-2';
+          rowDiv.style.gridTemplateColumns = `repeat(${row.length}, minmax(0, 1fr))`;
+          row.forEach(slot => {
+            const wrap = document.createElement('label');
+            wrap.className = 'flex flex-col min-w-0';
+            const cur = loadout[slot] || '';
+            const opts = items.filter(i => i.slot === slot)
+              .map(i => `<option value="${i.id}" ${i.id === cur ? 'selected' : ''}>${i.name}${i.sseulshap ? '★' : ''}</option>`).join('');
+            wrap.innerHTML = `
+              <span class="text-[10px] text-slate-500 leading-tight">${slot}</span>
+              <select data-slot="${slot}" class="loadout-sel w-full px-1.5 py-1 border border-slate-200 rounded text-xs truncate">
+                <option value="">—</option>
+                ${opts}
+              </select>
+            `;
+            rowDiv.appendChild(wrap);
+          });
+          grid.appendChild(rowDiv);
         });
         grid.querySelectorAll('.loadout-sel').forEach(sel => {
           sel.addEventListener('change', () => {
@@ -1394,8 +1455,12 @@
         const dispStr = opts.dispStr || 0;
 
         // WA = floor(weaponAtk × (1 + atk%/100)) + 표창 + 기타공격력 + 혼테일
-        const weaponEff = Math.floor(weaponAtk * (1 + sumAtkP / 100));
-        const wa = weaponEff + thrAtk + sumAtkOther + (opts.horntail ? 30 : 0);
+        // WA (무공) — 자막/허밋 자료 모델 채택: 공% 는 (무기 + 장갑) 깡공 합산에 적용.
+        //   표창/혼테/버프는 공% 안 들어감, 별도 가산.
+        //   사용자 무기 공%=0 케이스에선 모델 A/B/C 모두 동일 결과라 시드 검증값으로 구분 불가.
+        const gearAtk = weaponAtk + sumAtkOther;
+        const gearEff = Math.floor(gearAtk * (1 + sumAtkP / 100));
+        const wa = gearEff + thrAtk + (opts.horntail ? 30 : 0);
 
         const stat = Math.floor((totalLuk * 3.6 + totalDex + dispStr) * wa / 100);
         // ===== 최소 base AP + 장비별 활성 임계 base 역산 =====
@@ -1547,10 +1612,66 @@
           shadowMult, shadowSkillPct, totalCrit, perCrit,
           masteryPct, hits, skillDmgPct, LUK, WA,
           effSharp, sharpFromGlove,
+          // N방컷용 raw 값 (WDEF 적용 전 스공)
+          statMax, statMin, totalDmgMult, bossMult,
         };
       }
       // 호환성 alias (기존 호출 코드)
       const computeTrsDamage = computeAttackDamage;
+
+      // ============== N방컷 (정규 근사) ==============
+      // 표준정규 CDF (Abramowitz approx)
+      function normCdf(z) {
+        const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, pp=0.3275911;
+        const sign = z >= 0 ? 1 : -1;
+        const az = Math.abs(z) / Math.sqrt(2);
+        const t = 1.0 / (1.0 + pp * az);
+        const y = 1.0 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-az*az);
+        return 0.5 * (1.0 + sign * y);
+      }
+      // 1 사이클 데미지의 mean/var 계산 후 N=1..15 까지 P(≤N 방) 정규 근사
+      function computeNcut(dmg, mobHP, wdef, mobLv, charLv) {
+        const D = Math.max(0, mobLv - charLv);
+        // WDEF / 레벨 차감 (README 4.6)
+        const adjStatMax = Math.max(0, dmg.statMax * (1 - 0.01*D) - wdef * 0.5);
+        const adjStatMin = Math.max(0, dmg.statMin * (1 - 0.01*D) - wdef * 0.6);
+        // hit 분포 (oneHitMult = totalDmg × boss 까지 적용)
+        const oneHitMult = dmg.totalDmgMult * dmg.bossMult;
+        const hitNoCritMin = adjStatMin * (dmg.skillDmgPct / 100) * oneHitMult;
+        const hitNoCritMax = adjStatMax * (dmg.skillDmgPct / 100) * oneHitMult;
+        const hitCritMin   = adjStatMin * (dmg.skillDmgPct + dmg.perCrit) / 100 * oneHitMult;
+        const hitCritMax   = adjStatMax * (dmg.skillDmgPct + dmg.perCrit) / 100 * oneHitMult;
+        // 혼합 분포 mean/var
+        const noCritMean = (hitNoCritMin + hitNoCritMax) / 2;
+        const noCritVar  = Math.pow(hitNoCritMax - hitNoCritMin, 2) / 12;
+        const critMean = (hitCritMin + hitCritMax) / 2;
+        const critVar  = Math.pow(hitCritMax - hitCritMin, 2) / 12;
+        const p = dmg.totalCrit / 100;
+        const hitMean = p * critMean + (1-p) * noCritMean;
+        const hitVar  = p * critVar + (1-p) * noCritVar
+                      + p * critMean*critMean + (1-p) * noCritMean*noCritMean - hitMean*hitMean;
+        // 1 사이클 = hits 개 hit (독립) × shadowMult
+        const cycleMean = dmg.hits * hitMean * dmg.shadowMult;
+        const cycleVar  = dmg.hits * hitVar * dmg.shadowMult * dmg.shadowMult;
+        const cycleStd  = Math.sqrt(Math.max(0, cycleVar));
+        // P(≤N 방) — N=1..15
+        const results = [];
+        for (let n = 1; n <= 15; n++) {
+          const mu = n * cycleMean;
+          const sd = Math.sqrt(n) * cycleStd;
+          const pCum = sd > 0 ? (1 - normCdf((mobHP - mu) / sd)) : (mu >= mobHP ? 1 : 0);
+          results.push({ n, pCum: pCum * 100 });
+        }
+        // 임계값: 50% / 95% / 99% 처음 도달 N
+        const threshold = (pct) => results.find(r => r.pCum >= pct);
+        return {
+          D, adjStatMin, adjStatMax,
+          hitMean, hitStd: Math.sqrt(Math.max(0, hitVar)),
+          cycleMean, cycleStd,
+          results,
+          th50: threshold(50), th95: threshold(95), th99: threshold(99),
+        };
+      }
 
       // ============== 스탯 환산 (maplescouter 스타일) ==============
       // 현재 셋업 + 스킬/버프 기준, 각 옵션 1단위가 LUK 몇 / 무공 몇 과 같은 데미지 효과인지
@@ -1615,6 +1736,9 @@
           book20Price: +document.getElementById('book20-price').value || 0,
           book30Price: +document.getElementById('book30-price').value || 0,
           resetPrice: +document.getElementById('reset-price').value || 0,
+          mobHP: +document.getElementById('mob-hp').value || 0,
+          mobWdef: +document.getElementById('mob-wdef').value || 0,
+          mobLv: +document.getElementById('mob-lv').value || 0,
         };
       }
 
@@ -1643,6 +1767,9 @@
         if (savedConfig.book20Price != null) document.getElementById('book20-price').value = savedConfig.book20Price || '';
         if (savedConfig.book30Price != null) document.getElementById('book30-price').value = savedConfig.book30Price || '';
         if (savedConfig.resetPrice != null) document.getElementById('reset-price').value = savedConfig.resetPrice || '';
+        if (savedConfig.mobHP != null) document.getElementById('mob-hp').value = savedConfig.mobHP;
+        if (savedConfig.mobWdef != null) document.getElementById('mob-wdef').value = savedConfig.mobWdef;
+        if (savedConfig.mobLv != null) document.getElementById('mob-lv').value = savedConfig.mobLv;
       }
       applySavedConfig();
 
@@ -1725,11 +1852,14 @@
           cell('깡 DEX', baseStats.sumDex, '', 'text-purple-600') +
           cell('DEX%', baseStats.sumDexP + baseStats.sumAllstatP, '%', 'text-purple-600');
 
-        // 공격력: 공% 적용 = 무기깡공만 / 미적용 = 표창 + 장갑 (등) + (혼테일 같은 버프는 나중에)
+        // 공격력 분리:
+        //   공% 포함 = 무기 + 장갑 (gear)
+        //   공% 미포함 = 표창 + 혼테 + (향후 버프공/이유식/정축 등)
+        const atkWithPct = baseStats.weaponAtk + baseStats.sumAtkOther;
+        const atkNoPct = baseStats.thrAtk + (opts.horntail ? 30 : 0);
         document.getElementById('summary-atk').innerHTML =
-          cell('무기공 (공% O)', baseStats.weaponAtk, '', 'text-orange-600', 'bg-orange-50') +
-          cell('표창공 (공% X)', baseStats.thrAtk, '', 'text-slate-700') +
-          cell('장갑공 등 (공% X)', baseStats.sumAtkOther, '', 'text-slate-700');
+          cell('공% 포함 (무기+장갑)', atkWithPct, '', 'text-orange-600', 'bg-orange-50') +
+          cell('공% 미포함 (표창+버프)', atkNoPct, '', 'text-slate-700');
 
         document.getElementById('summary-pot').innerHTML =
           cell('공%', baseStats.sumAtkP, '%', 'text-orange-600', 'bg-orange-50') +
@@ -1739,6 +1869,56 @@
 
         // 스탯 환산표 렌더
         renderConverter(baseEquip, opts, baseDmg, baseStats);
+
+        // ===== N방컷 계산기 =====
+        const ncutEl = document.getElementById('ncut-result');
+        if (opts.mobHP > 0) {
+          const nc = computeNcut(baseDmg, opts.mobHP, opts.mobWdef, opts.mobLv, opts.level);
+          // 임계 N 표시
+          const thChip = (label, th, cls) => th
+            ? `<span class="${cls} px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold">${label} <strong>${th.n}방</strong></span>`
+            : `<span class="bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded text-[10px]">${label} 불가</span>`;
+          // N=1..10 표 — 100% 도달한 첫 N 까지만 표시 (그 후 다 100% 라 중복)
+          const displayed = [];
+          for (const r of nc.results.slice(0, 10)) {
+            displayed.push(r);
+            if (r.pCum >= 99.95) break;
+          }
+          const rows = displayed.map(r => {
+            const cls = r.pCum >= 99 ? 'bg-emerald-50 text-emerald-700'
+                     : r.pCum >= 50 ? 'bg-amber-50 text-amber-700'
+                     : 'bg-slate-50 text-slate-500';
+            const bar = Math.min(100, Math.max(0, r.pCum));
+            return `<div class="flex items-center gap-1.5 text-[10px] ${cls} rounded px-1.5 py-0.5">
+              <span class="font-mono font-semibold w-7 text-right">≤${r.n}방</span>
+              <div class="flex-1 bg-white/60 rounded h-1.5 overflow-hidden">
+                <div class="h-full bg-current" style="width: ${bar}%"></div>
+              </div>
+              <span class="font-mono font-semibold w-12 text-right">${r.pCum.toFixed(1)}%</span>
+            </div>`;
+          }).join('');
+          ncutEl.innerHTML = `
+            <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+              <div class="bg-slate-50 rounded px-2 py-1">
+                <div class="text-slate-500">D (몹Lv-캐릭Lv)</div>
+                <div class="font-mono font-semibold">${nc.D}</div>
+              </div>
+              <div class="bg-slate-50 rounded px-2 py-1">
+                <div class="text-slate-500">1 사이클 평균</div>
+                <div class="font-mono font-semibold">${Math.round(nc.cycleMean).toLocaleString()} <span class="text-slate-400">±${Math.round(nc.cycleStd).toLocaleString()}</span></div>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-1">
+              ${thChip('🎯 50%', nc.th50, 'bg-amber-100 text-amber-700')}
+              ${thChip('✓ 95%', nc.th95, 'bg-emerald-100 text-emerald-700')}
+              ${thChip('★ 99%', nc.th99, 'bg-blue-100 text-blue-700')}
+            </div>
+            <div class="space-y-0.5">${rows}</div>
+            <div class="text-[9px] text-slate-400">정규 근사 · WDEF 차감 후 스공 분포 기준 · D≥0 일 때만 차감</div>
+          `;
+        } else {
+          ncutEl.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-2">몹 HP 입력하면 N방컷 표시</p>';
+        }
 
         // ===== 부스탯 요구치 알림 + dropdown 빨간 표시 =====
         const reqSection = document.getElementById('reqdex-section');
@@ -1766,6 +1946,8 @@
           const txtClass = shortage > 0 ? 'text-rose-700' : 'text-emerald-700';
           const optLukAfter = Math.max(13, totalStatPoints(opts.level) - reqBase);
           const isOptimal = curBase === reqBase;
+          // 기본 4 (캐릭 시작 DEX) + 추가 AP 분리 표시
+          const fmtBase = (v) => `${v} <span class="text-[10px] text-slate-400 font-normal">(4+${Math.max(0, v - 4)})</span>`;
           parts.push(`
             <div class="grid grid-cols-3 gap-1.5">
               <div class="rounded border ${boxClass} px-2 py-1.5">
@@ -1775,11 +1957,11 @@
                     class="text-[9px] px-1.5 py-0.5 rounded font-semibold ${isOptimal ? 'bg-slate-100 text-slate-400 cursor-default' : 'bg-rose-500 text-white hover:bg-rose-600'}"
                     title="부스탯을 ${reqBase}로 맞추고 남는 AP는 LUK로 (LUK ${optLukAfter})">${isOptimal ? '✓ 최적' : '🎯 최적화'}</button>
                 </div>
-                <div class="font-mono font-bold text-sm ${txtClass}">${reqBase}</div>
+                <div class="font-mono font-bold text-sm ${txtClass}">${fmtBase(reqBase)}</div>
               </div>
               <div class="rounded border border-slate-200 bg-slate-50 px-2 py-1.5">
                 <div class="text-[10px] text-slate-500">현재 순수 DEX</div>
-                <div class="font-mono font-bold text-sm text-slate-700">${curBase}</div>
+                <div class="font-mono font-bold text-sm text-slate-700">${fmtBase(curBase)}</div>
               </div>
               <div class="rounded border ${boxClass} px-2 py-1.5">
                 <div class="text-[10px] text-slate-500">${shortage > 0 ? '부족' : '여유'}</div>
@@ -1800,26 +1982,48 @@
             parts.push(`<div class="text-[10px] text-emerald-700 font-semibold">✓ 모든 장비 활성화됨</div>`);
           }
 
-          // 활성화 순서 (찍어야 할 base DEX progression)
+          // 활성화 순서 (찍어야 할 base DEX progression) — 같은 baseNeeded 끼리 그룹화 + 단계별 증분
           if (baseStats.reqSteps && baseStats.reqSteps.length > 0) {
-            const arrow = '<span class="text-slate-400 mx-1">→</span>';
-            const chain = baseStats.reqSteps.map((s, i) => {
-              const reached = curBase >= s.baseNeeded;
+            const groups = [];
+            baseStats.reqSteps.forEach(s => {
+              const last = groups[groups.length - 1];
+              if (last && last.baseNeeded === s.baseNeeded) last.items.push(s);
+              else groups.push({ baseNeeded: s.baseNeeded, items: [s] });
+            });
+            // chain: 14(4) +5 19(1) +3 22 — 현재 base 부터 첫 그룹까지 / 그룹 간 증분
+            const chainParts = [];
+            // 현재 base → 첫 그룹 (도달 안 했을 때만)
+            const firstGroup = groups[0];
+            if (curBase < firstGroup.baseNeeded) {
+              chainParts.push(`<span class="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-mono">현재 ${curBase}</span>`);
+              chainParts.push(`<span class="text-rose-500 text-[10px] font-mono font-semibold mx-1">+${firstGroup.baseNeeded - curBase}</span>`);
+            }
+            groups.forEach((g, i) => {
+              const reached = curBase >= g.baseNeeded;
               const cls = reached ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
-              return `<span class="inline-block px-1.5 py-0.5 rounded ${cls} text-[10px] font-mono font-semibold whitespace-nowrap" title="${s.name} (요구 DEX ${s.reqDex})">${s.baseNeeded}</span>`;
-            }).join(arrow);
-            const detail = baseStats.reqSteps.map((s, i) =>
-              `<div class="flex items-center gap-1.5 text-[10px]">
-                <span class="font-mono font-semibold w-8 text-right ${curBase >= s.baseNeeded ? 'text-emerald-700' : 'text-rose-700'}">${s.baseNeeded}</span>
+              const titles = g.items.map(it => `${it.name} (요구 ${it.reqDex})`).join(', ');
+              chainParts.push(`<span class="inline-block px-1.5 py-0.5 rounded ${cls} text-[10px] font-mono font-semibold whitespace-nowrap" title="${titles}">${g.baseNeeded}</span>`);
+              if (i < groups.length - 1) {
+                const delta = groups[i + 1].baseNeeded - g.baseNeeded;
+                chainParts.push(`<span class="text-slate-400 text-[10px] font-mono mx-1">+${delta}</span>`);
+              }
+            });
+            const chain = chainParts.join('');
+            // detail: 그룹별로 묶어서
+            const detail = groups.map(g => {
+              const reached = curBase >= g.baseNeeded;
+              const colorCls = reached ? 'text-emerald-700' : 'text-rose-700';
+              const items = g.items.map(it => `<span class="inline-block px-1 py-0 rounded bg-white border border-slate-200 text-slate-700 mr-1 mb-0.5">${it.name}<span class="text-slate-400 ml-1">(요구 ${it.reqDex})</span></span>`).join('');
+              return `<div class="flex items-start gap-1.5 text-[10px] py-0.5">
+                <span class="font-mono font-semibold w-8 flex-shrink-0 ${colorCls}">${g.baseNeeded}</span>
                 <span class="text-slate-400">·</span>
-                <span class="text-slate-700 truncate">${s.name}</span>
-                <span class="text-slate-400 text-[9px] ml-auto">요구 ${s.reqDex}</span>
-              </div>`
-            ).join('');
+                <span class="flex-1 flex flex-wrap">${items}</span>
+              </div>`;
+            }).join('');
             parts.push(`<div class="border-t border-rose-100 pt-1.5 mt-1.5">
-              <div class="text-[10px] text-slate-500 mb-1">활성화 필요 순수 DEX 순서</div>
+              <div class="text-[10px] text-slate-500 mb-1">활성화 필요 순수 DEX 순서 · 단계별 증분</div>
               <div class="flex flex-wrap items-center gap-y-1 mb-1.5">${chain}</div>
-              <div class="space-y-0.5 bg-slate-50 rounded p-1.5">${detail}</div>
+              <div class="bg-slate-50 rounded p-1.5">${detail}</div>
               <div class="text-[9px] text-slate-400 mt-1">초록 = 현재 base DEX(${curBase})로 도달, 빨강 = 부족</div>
             </div>`);
           }
@@ -2111,7 +2315,7 @@
         recalc();
       }));
       renderSortButtons();
-      ['atk-lv','critthrow-lv','shadow-lv','mastery-lv','mw-lv','book20-price','book30-price','reset-price'].forEach(id => {
+      ['atk-lv','critthrow-lv','shadow-lv','mastery-lv','mw-lv','book20-price','book30-price','reset-price','mob-hp','mob-wdef','mob-lv'].forEach(id => {
         document.getElementById(id).addEventListener('input', recalc);
       });
       ['sharp','atk-skill'].forEach(id => document.getElementById(id).addEventListener('change', recalc));
