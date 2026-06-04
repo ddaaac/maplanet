@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>메이플 플래닛 — 도적 트스 환산</title>
+    <title>메이플 플래닛 — 도적 트스 세팅</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       body {
@@ -28,12 +28,12 @@
             <path d="M12 2l2.39 7.36H22l-6.18 4.49L18.21 22 12 17.27 5.79 22l2.39-8.15L2 9.36h7.61L12 2z"/>
           </svg>
         </span>
-        <h1 class="text-lg sm:text-xl font-bold">메이플 플래닛 환산 (도적 트스)</h1>
+        <h1 class="text-lg sm:text-xl font-bold">메이플 플래닛 세팅 (도적 트스)</h1>
       </div>
       <div class="max-w-6xl mx-auto px-4 sm:px-6">
         <nav class="flex gap-6 text-sm">
           <button type="button" data-tab="calc" class="tab-btn relative py-3 font-semibold text-slate-900">
-            환산
+            세팅
             <span class="absolute left-0 right-0 bottom-0 h-0.5 bg-orange-500 tab-underline"></span>
           </button>
           <button type="button" data-tab="cmp" class="tab-btn relative py-3 font-medium text-slate-500 hover:text-slate-900">
@@ -49,25 +49,19 @@
     </header>
 
     <main class="max-w-7xl mx-auto p-4 sm:p-6">
-      <!-- ===================== 환산 탭 ===================== -->
+      <!-- ===================== 세팅 탭 ===================== -->
       <div data-panel="calc" class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
         <div class="space-y-3">
           <!-- 프리셋 불러오기 / 기준 갱신 -->
-          <section class="bg-white rounded-lg border border-slate-200 px-3 py-2 space-y-1.5">
-            <div class="flex items-center gap-2">
+          <section class="bg-white rounded-lg border border-slate-200 px-3 py-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <span class="text-xs font-semibold text-slate-600 whitespace-nowrap flex items-center gap-1">
                 <span class="inline-block w-1 h-3 bg-orange-500 rounded"></span>프리셋
               </span>
-              <select id="calc-preset-sel" class="flex-1 min-w-0 px-2 py-1 border border-slate-300 rounded text-xs"></select>
-              <button type="button" id="calc-preset-load" class="text-xs px-3 py-1 rounded bg-orange-500 text-white hover:bg-orange-600 whitespace-nowrap">불러오기</button>
-            </div>
-            <div class="flex items-center gap-2 pt-1.5 border-t border-slate-100">
-              <span class="text-[10px] text-slate-500 flex-1">현재 환산 셋업을 새 프리셋으로 저장 (이름 입력)</span>
-              <button type="button" id="calc-add-preset" class="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap">➕ 프리셋으로 추가</button>
-            </div>
-            <div class="flex items-center gap-2 pt-1.5 border-t border-slate-100">
-              <span class="text-[10px] text-slate-500 flex-1">스펙업했으면 → 현재 셋업을 새 기준으로, 다른 프리셋들은 변경분만 유지하고 자동 리베이스 (레벨 바뀌면 부스탯 최적화 포함)</span>
-              <button type="button" id="calc-rebase" class="text-xs px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 whitespace-nowrap">🔄 기준 갱신</button>
+              <select id="calc-preset-sel" class="w-28 min-w-0 px-2 py-1 border border-slate-300 rounded text-xs"></select>
+              <button type="button" id="calc-update-preset" class="text-xs px-2 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 whitespace-nowrap">덮어쓰기</button>
+              <button type="button" id="calc-add-preset" class="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap">새 프리셋으로 추가</button>
+              <button type="button" id="calc-rebase" class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 whitespace-nowrap">기준 갱신</button>
             </div>
           </section>
 
@@ -113,6 +107,7 @@
             <h2 class="font-semibold text-sm mb-2 flex items-center gap-2">
               <span class="inline-block w-1 h-3 bg-rose-500 rounded"></span>
               부스탯 (DEX) 요구치
+              <span id="reqdex-mw-slot"></span>
             </h2>
             <div id="reqdex-content" class="space-y-2 text-xs"></div>
           </section>
@@ -128,9 +123,7 @@
                 현재 LUK <strong id="cv-luk" class="text-slate-800 font-mono">0</strong>
               </div>
             </div>
-            <div class="text-[10px] text-slate-400 mb-2">장비 LUK 기준 · 깡 LUK 1 증가시 최종 LUK <span id="cv-perluk" class="font-mono font-semibold text-slate-700">0</span> 상승</div>
-            <div id="convert-list" class="space-y-1"></div>
-            <div class="text-[9px] text-slate-400 mt-1.5">옵션 1단위가 깡 LUK 몇과 같은 데미지 효과인지 환산. 현재 셋업 + 스킬/버프 기준.</div>
+            <div id="convert-list" class="space-y-1 mt-1"></div>
           </section>
         </div>
 
@@ -138,36 +131,34 @@
         <aside class="space-y-3">
           <section class="bg-white rounded-lg border border-slate-200 p-4">
             <div class="text-[10px] text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1.5">
-              <span>실제 데미지 (사이클 합 — 쉐파 포함)</span>
-              <span class="text-slate-400 normal-case" id="r-skill-label">트스 3타</span>
+              <span>실제 데미지</span>
               <span id="r-sharp-info" class="text-[9px] px-1 py-0.5 rounded font-semibold normal-case"></span>
               <span class="relative group inline-block">
                 <button type="button" tabindex="0"
                   class="w-3.5 h-3.5 inline-flex items-center justify-center rounded-full bg-slate-200 text-slate-600 text-[9px] font-bold leading-none cursor-help"
                   aria-label="공식 보기">i</button>
-                <span class="absolute right-0 top-full mt-1 z-20 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[10px] leading-relaxed rounded p-2 w-80 shadow-lg whitespace-normal font-normal normal-case">
+                <span class="absolute left-0 top-full mt-1 z-20 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[10px] leading-relaxed rounded p-2 w-80 shadow-lg whitespace-normal font-normal normal-case">
                   <strong class="text-orange-300">럭키 세븐 / 트리플 스로우 특수 공식</strong><br>
                   <code class="text-orange-200">한 타격 최대값 = LUK × 5.0 × 무기공격력 / 100 × 스킬데미지%</code><br>
                   <code class="text-orange-200">한 타격 최소값 = LUK × 2.5 × 무기공격력 / 100 × 스킬데미지%</code><br><br>
+                  <strong class="text-orange-300">무기공격력</strong> = floor((무기깡공 + 장갑깡공) × (1 + 공격력%/100)) + 표창 + 공격력버프(혼테/핑크빈 등) + 정축/여축<br>
+                  공격력%는 (무기+장갑) 깡공 합산에만 적용. 나머지는 별도 가산.<br><br>
                   <strong>크리티컬 (합연산)</strong>: 크리당 추가 %p = (10 + 3×크리스로우Lv) + (샤프 켰을 때 +100 + 샤프 크댐%)<br>
                   <code class="text-orange-200">크리 타격 = 스공 × (스킬데미지% + 크리추가%p) / 100</code><br>
                   ※ 곱연산 (일반×배율) 아님. 옛메 / 메플플 표준.<br><br>
-                  <strong>한 사이클</strong> = 한 타격 × 타수 × 쉐도우 파트너(1 + 스킬데미지%) × (1 + 총 데미지%) × (보스전이면 1 + 보스 데미지%)<br><br>
+                  <strong>한 사이클</strong> = 한 타격 × 타수 × 쉐도우 파트너(1 + 스킬데미지%) × (1 + 총 데미지% + 보스 데미지%[보스전])<br>
+                  ※ 총뎀% 와 보공% 는 <strong>서로 합연산</strong> (보공 높을수록 데미지 효율 ↓). 쉐파는 분신이라 곱연산.<br><br>
                   <strong>기댓값</strong> = (1 − 크리확률) × 일반 평균 + 크리확률 × 크리 평균<br><br>
                   <strong class="text-orange-300">1타 데미지</strong> = 쉐도우 파트너 / 타수 제외 (인게임 데미지 숫자랑 매칭하려고)<br>
                   표창 마스터리는 적용 안 됨 (특수 공식 자체에 최대/최소 변동 내장)
                 </span>
               </span>
+              <label class="ml-auto flex items-center gap-1 normal-case cursor-pointer">
+                <input type="checkbox" id="boss-mode">
+                <span class="text-slate-600 font-normal">보스전</span>
+              </label>
             </div>
             <div class="space-y-1.5">
-              <div class="bg-slate-50 rounded px-2 py-1.5">
-                <div class="text-[10px] text-slate-500">크리 ✗ (모두 일반)</div>
-                <div id="r-trs-nocrit" class="font-mono text-base font-bold text-slate-700">0 ~ 0</div>
-              </div>
-              <div class="bg-slate-50 rounded px-2 py-1.5">
-                <div class="text-[10px] text-slate-500">크리 ✓ (모두 크리)</div>
-                <div id="r-trs-crit" class="font-mono text-base font-bold text-slate-700">0 ~ 0</div>
-              </div>
               <div class="bg-blue-50 rounded px-2 py-1.5">
                 <div class="text-[10px] text-blue-600 font-semibold">기댓값 (사이클 평균)</div>
                 <div id="r-trs-exp" class="font-mono text-lg font-bold text-blue-600">0</div>
@@ -188,10 +179,9 @@
                 </div>
               </div>
 
-              <div class="text-[10px] text-slate-400 text-right">퍼댐(기댓값) <span id="r-pct">0%</span></div>
             </div>
 
-            <div class="grid grid-cols-4 gap-1.5 mt-3 pt-3 border-t border-slate-100 text-xs">
+            <div class="grid grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-slate-100 text-xs">
               <div class="bg-slate-50 rounded px-2 py-1.5">
                 <div class="text-[10px] text-slate-500">LUK</div>
                 <div id="r-luk" class="font-mono font-semibold">0</div>
@@ -199,24 +189,6 @@
               <div class="bg-slate-50 rounded px-2 py-1.5">
                 <div class="text-[10px] text-slate-500">DEX</div>
                 <div id="r-dex" class="font-mono font-semibold">0</div>
-              </div>
-              <div class="bg-slate-50 rounded px-2 py-1.5 relative">
-                <div class="text-[10px] text-slate-500 flex items-center gap-1">
-                  무공
-                  <span class="relative group inline-block">
-                    <button type="button" tabindex="0"
-                      class="w-3 h-3 inline-flex items-center justify-center rounded-full bg-slate-300 text-slate-700 text-[8px] font-bold leading-none cursor-help"
-                      aria-label="무공 설명">i</button>
-                    <span class="absolute left-0 top-full mt-1 z-30 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[10px] leading-relaxed rounded p-2 w-64 shadow-lg whitespace-normal font-normal">
-                      <strong class="text-orange-300">무기공격력 (WA)</strong><br>
-                      데미지 공식의 "공격력" 합산값.<br><br>
-                      <code class="text-orange-200">= floor((무기깡공 + 장갑깡공) × (1 + 공격력%/100))<br>+ 표창 공격력 + 혼테일(+30)</code><br><br>
-                      공격력%는 <strong>(무기+장갑) 깡공 합산</strong>에 적용. 표창/혼테/버프는 따로 더해짐.<br>
-                      (자막/허밋 자료 모델)
-                    </span>
-                  </span>
-                </div>
-                <div id="r-wa" class="font-mono font-semibold">0</div>
               </div>
               <div class="bg-orange-50 rounded px-2 py-1.5 relative">
                 <div class="text-[10px] text-orange-600 flex items-center gap-1">
@@ -229,6 +201,8 @@
                       <strong class="text-orange-300">스탯공격력 (스공)</strong><br>
                       도적 표창 일반 공격력 MAX (사이트 표시값).<br><br>
                       <code class="text-orange-200">스공 = (LUK × 3.6 + DEX) × 무기공격력 / 100</code><br><br>
+                      <strong>무기공격력</strong> = floor((무기깡공 + 장갑깡공) × (1 + 공격력%/100)) + 표창 + 공격력버프 + 정축/여축<br>
+                      (공격력%는 무기+장갑 깡공 합산에만 적용)<br><br>
                       참고용. <strong>럭키 세븐 / 트리플 스로우는 이 값 안 쓰고 LUK × 5 특수 공식 사용.</strong><br>
                       어벤저/드레인 같은 일반 스킬은 이 값에 스킬%만 곱하면 됨.
                     </span>
@@ -247,20 +221,15 @@
             </h2>
             <div class="space-y-1.5 text-xs">
               <!-- 공격 스킬 -->
-              <div class="bg-slate-50 rounded p-1.5 space-y-1">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-slate-700 font-semibold w-14">공격</span>
-                  <select id="atk-skill" class="flex-1 px-1.5 py-0.5 border border-slate-300 rounded text-xs">
-                    <option value="trs">트리플 스로우 (3타)</option>
-                    <option value="ls">럭키 세븐 (2타)</option>
-                  </select>
-                </div>
-                <div class="flex items-center gap-1.5 pl-[60px]">
-                  <span class="text-slate-500">Lv</span>
-                  <input type="number" id="atk-lv" value="30" min="1" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
-                  <button type="button" data-max-btn="atk" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
-                  <span class="text-[10px] text-slate-400" id="atk-info">—</span>
-                </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 font-semibold w-16">공격</span>
+                <select id="atk-skill" class="flex-1 min-w-0 px-1.5 py-0.5 border border-slate-300 rounded text-xs">
+                  <option value="trs">트리플 스로우</option>
+                  <option value="ls">럭키 세븐</option>
+                </select>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="atk-lv" value="30" min="1" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <button type="button" data-max-btn="atk" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
               </div>
 
               <div class="flex items-center gap-1.5">
@@ -276,36 +245,6 @@
                 <span class="text-slate-500">Lv</span>
                 <input type="number" id="shadow-lv" value="30" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
                 <button type="button" data-max-btn="shadow" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
-                <span class="text-[10px] text-slate-400" id="shadow-info">—</span>
-              </div>
-
-              <div class="flex items-center gap-1.5">
-                <span class="text-slate-700 w-16">마스터리</span>
-                <span class="text-slate-500">Lv</span>
-                <input type="number" id="mastery-lv" value="20" min="0" max="20" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
-                <button type="button" data-max-btn="mastery" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
-                <span class="text-[10px] text-slate-400" id="mastery-info">—</span>
-              </div>
-
-              <div class="flex items-center gap-1.5 pt-1 mt-1 border-t border-slate-100">
-                <span class="text-slate-700 font-semibold w-16">메용</span>
-                <span class="text-slate-500">Lv</span>
-                <input type="number" id="mw-lv" value="0" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
-                <button type="button" data-max-btn="mw" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
-                <span class="text-[10px] text-slate-400" id="mw-info">없음</span>
-                <span class="relative group inline-block ml-auto">
-                  <button type="button" tabindex="0"
-                    class="w-3.5 h-3.5 inline-flex items-center justify-center rounded-full bg-slate-200 text-slate-600 text-[9px] font-bold leading-none cursor-help"
-                    aria-label="메용 설명">i</button>
-                  <span class="absolute right-0 top-full mt-1 z-30 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[10px] leading-relaxed rounded p-2 w-72 shadow-lg whitespace-normal font-normal normal-case">
-                    <strong class="text-orange-300">메이플 용사</strong><br>
-                    Lv N → 모든 스탯 +<code class="text-orange-200">ceil(N/2)</code>%<br>
-                    <strong>순수 AP 만 boost</strong> — base LUK/DEX × % (floor)<br>
-                    장비 깡 스탯은 영향 X<br><br>
-                    <strong class="text-orange-300">부스탯 cycle</strong>: 메용 boost 후 totalDEX 계산 → 요구 DEX 미달 아이템 모든 스탯 비활성 → 재계산 반복. 비활성 장비는 빨갛게 표시됨.<br><br>
-                    버프 해제 시 활성화된 장비도 같이 비활성 (in-game).
-                  </span>
-                </span>
               </div>
             </div>
           </section>
@@ -318,42 +257,45 @@
             </h2>
             <div class="space-y-1.5 text-xs">
               <label class="flex items-center gap-2">
-                <span class="text-slate-700 w-12">샤프</span>
-                <select id="sharp" class="flex-1 px-2 py-1 border border-slate-300 rounded text-xs">
+                <span class="text-slate-700 w-12">공버프</span>
+                <select id="atk-buff" class="w-40 px-2 py-1 border border-slate-300 rounded text-xs">
                   <option value="none">없음</option>
-                  <option value="usable">쓸샾 (10%/+15%)</option>
-                  <option value="max">만렙 (15%/+40%)</option>
+                  <option value="iyusik">이유식 (+7)</option>
+                  <option value="bunno">분노M (+10)</option>
+                  <option value="horntail" selected>혼테일 (+30)</option>
+                  <option value="pinkbean">핑크빈 (+35)</option>
                 </select>
               </label>
-              <label class="flex items-center gap-1.5">
-                <input type="checkbox" id="horntail" checked>
-                <span class="text-slate-700">혼테일 <span class="text-slate-400">(+30 공)</span></span>
-              </label>
-              <label class="flex items-center gap-1.5">
-                <input type="checkbox" id="boss-mode">
-                <span class="text-slate-700">보스전 <span class="text-slate-400">(보공 적용)</span></span>
-              </label>
-            </div>
-          </section>
-
-          <!-- 총 스탯 통계 -->
-          <section class="bg-white rounded-lg border border-slate-200 p-3">
-            <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
-              <span class="inline-block w-1 h-3 bg-blue-500 rounded"></span>
-              총 스탯 통계
-            </h2>
-            <div class="space-y-2">
-              <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">주스탯 / 부스탯</div>
-                <div id="summary-stat" class="grid grid-cols-4 gap-1.5"></div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 w-12">샤프</span>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="sharp-lv" value="0" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <button type="button" data-max-btn="sharp" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                <label class="flex items-center gap-1 text-[10px] text-slate-600 cursor-pointer">
+                  <input type="checkbox" id="sharp-usable"> 쓸샾
+                </label>
+                <span class="text-[10px] text-slate-400" id="sharp-info"></span>
               </div>
-              <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">공격력 <span class="text-orange-500">공%적용 (무기+장갑)</span> / <span class="text-slate-600">공%X (표창)</span></div>
-                <div id="summary-atk" class="grid grid-cols-2 gap-1.5"></div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 w-12">정축</span>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="jeongchuk-lv" value="0" min="0" max="20" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <button type="button" data-max-btn="jeongchuk" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                <span class="text-[10px] text-slate-400">+<span id="jeongchuk-atk">0</span></span>
               </div>
-              <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">무기 잠재</div>
-                <div id="summary-pot" class="grid grid-cols-4 gap-1.5"></div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 w-12">여축</span>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="yeochuk-lv" value="0" min="0" max="12" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <button type="button" data-max-btn="yeochuk" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                <span class="text-[10px] text-slate-400">+<span id="yeochuk-atk">0</span></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 w-12">메용</span>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="mw-lv" value="0" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <button type="button" data-max-btn="mw" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                <span class="text-[10px] text-slate-400" id="mw-info">없음</span>
               </div>
             </div>
           </section>
@@ -384,6 +326,28 @@
             </div>
             <div id="ncut-result" class="text-xs space-y-1.5"></div>
           </section>
+
+          <!-- 총 스탯 통계 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
+              <span class="inline-block w-1 h-3 bg-blue-500 rounded"></span>
+              총 스탯 통계
+            </h2>
+            <div class="space-y-2">
+              <div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">주스탯 / 부스탯</div>
+                <div id="summary-stat" class="grid grid-cols-4 gap-1.5"></div>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">공격력 <span class="text-orange-500">공%적용 (무기+장갑)</span> / <span class="text-slate-600">공%X (표창)</span></div>
+                <div id="summary-atk" class="grid grid-cols-2 gap-1.5"></div>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">무기 잠재</div>
+                <div id="summary-pot" class="grid grid-cols-4 gap-1.5"></div>
+              </div>
+            </div>
+          </section>
         </aside>
       </div>
 
@@ -394,10 +358,8 @@
           <section class="bg-white rounded-lg border border-slate-200 p-3">
             <div class="flex items-center justify-between mb-2">
               <h2 class="font-semibold text-sm">비교 프리셋</h2>
-              <button type="button" id="add-preset" class="text-xs px-3 py-1 rounded bg-orange-500 text-white hover:bg-orange-600">+ 프리셋 추가</button>
             </div>
             <div id="preset-list" class="space-y-3"></div>
-            <p class="text-xs text-slate-400 mt-2">프리셋마다 이름 + 여러 슬롯 교체 + 캐릭터/스킬/버프 캡쳐. 결과는 우측에 표시.</p>
           </section>
         </div>
 
@@ -415,7 +377,6 @@
                 class="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 font-normal">🔄</button>
             </h2>
             <div id="compare-results" class="space-y-1.5"></div>
-            <p class="text-[9px] text-slate-400 mt-1.5">효율 = 데미지 증가% ÷ 새로 사는 비용(억). 높을수록 가성비 좋음.</p>
           </section>
 
           <!-- 스킬북 가격 (트스 전용) -->
@@ -423,7 +384,6 @@
             <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
               <span class="inline-block w-1 h-3 bg-emerald-500 rounded"></span>
               트스 스킬북 가격
-              <span class="text-[10px] text-slate-400 font-normal ml-auto">기대비용 = 가격 ÷ 성공률</span>
             </h2>
             <div class="grid grid-cols-2 gap-2 text-xs">
               <label>
@@ -443,7 +403,6 @@
                 <div class="text-[9px] text-slate-400 mt-0.5">기대 <span id="book30-exp" class="font-mono">0</span>억</div>
               </label>
             </div>
-            <p class="text-[9px] text-slate-400 mt-1.5">럭키세븐은 스킬북 불필요. 기준→프리셋 트스 레벨이 10/20 경계를 넘으면 자동 반영 (프리셋 체크박스로 on/off).</p>
             <div class="mt-2 pt-2 border-t border-slate-100">
               <label class="text-xs">
                 <span class="text-slate-600">스탯 초기화권 가격 <span class="text-slate-400">(부스탯 재분배용)</span></span>
@@ -452,7 +411,6 @@
                   <span class="text-slate-400 text-[10px]">억</span>
                 </div>
               </label>
-              <p class="text-[9px] text-slate-400 mt-1">프리셋에서 '스탯 초기화권' 체크 시 → 그 장비에 맞게 부스탯 최소화(나머지 LUK) 한 스펙으로 계산하고 이 가격을 비용에 포함.</p>
             </div>
           </section>
         </aside>
@@ -626,6 +584,7 @@
       // 비교 기준 프리셋 id (null 이면 현재 셋업이 기준)
       let basePresetId = localStorage.getItem(STORAGE_KEYS.basePreset) || null;
       let cmpSort = localStorage.getItem('mp_cmpsort') || 'eff'; // 'eff' | 'dmg'
+      let reqIncludeMw = localStorage.getItem('mp_req_inc_mw') !== '0'; // 부스탯 요구치 계산에 메용 boost 포함 여부 (기본 true)
 
       function save() {
         localStorage.setItem(STORAGE_KEYS.items, JSON.stringify(items));
@@ -934,6 +893,9 @@
         if (it.allstatp) parts.push(`올% ${it.allstatp}`);
         if (it.atk) parts.push(`공 ${it.atk}`);
         if (it.atkp) parts.push(`공% ${it.atkp}`);
+        if (it.totaldmg) parts.push(`총뎀% ${it.totaldmg}`);
+        if (it.critrate) parts.push(`크확% ${it.critrate}`);
+        if (it.bossdmg) parts.push(`보공% ${it.bossdmg}`);
         if (it.reqDex) parts.push(`<span class="text-rose-600">요구DEX ${it.reqDex}</span>`);
         if (it.price) parts.push(`<span class="text-emerald-600">${it.price}억</span>`);
         return parts.join(' / ') || '-';
@@ -947,13 +909,14 @@
         ['귀고리','망토','목걸이','반지'],
         ['훈장'],
       ];
+      const SLOT_COLS = 5; // 한 줄 최대 칸 수 (모자/장갑/상의/하의/신발). 모든 드롭다운 동일 폭.
       function renderLoadout() {
         const grid = document.getElementById('loadout-grid');
         grid.innerHTML = '';
         SLOT_LAYOUT.forEach(row => {
           const rowDiv = document.createElement('div');
           rowDiv.className = 'grid gap-x-2';
-          rowDiv.style.gridTemplateColumns = `repeat(${row.length}, minmax(0, 1fr))`;
+          rowDiv.style.gridTemplateColumns = `repeat(${SLOT_COLS}, minmax(0, 1fr))`;
           row.forEach(slot => {
             const wrap = document.createElement('label');
             wrap.className = 'flex flex-col min-w-0';
@@ -969,6 +932,8 @@
             `;
             rowDiv.appendChild(wrap);
           });
+          // 빈 칸 패딩 — 행마다 폭 통일
+          for (let i = row.length; i < SLOT_COLS; i++) rowDiv.appendChild(document.createElement('div'));
           grid.appendChild(rowDiv);
         });
         grid.querySelectorAll('.loadout-sel').forEach(sel => {
@@ -989,9 +954,9 @@
       function renderPresetList() {
         const list = document.getElementById('preset-list');
         list.innerHTML = '';
-        renderCalcPresetLoader(); // 환산 탭 드롭다운 동기화
+        renderCalcPresetLoader(); // 세팅 탭 드롭다운 동기화
         if (compares.length === 0) {
-          list.innerHTML = '<p class="text-xs text-slate-400 py-2 text-center">프리셋 없음. "+ 프리셋 추가" 클릭.</p>';
+          list.innerHTML = '<p class="text-xs text-slate-400 py-2 text-center">프리셋 없음 — 세팅 탭에서 추가</p>';
           return;
         }
         // 비교 대상 결정 (base 가 지정되었으면 그 프리셋, 아니면 현재 셋업)
@@ -1022,19 +987,22 @@
             const charSame = s.level === cmpOpts.level && s.baseLuk === cmpOpts.baseLuk && s.baseDex === cmpOpts.baseDex;
             const skillSame = s.atkSkill === cmpOpts.atkSkill && s.atkLv === cmpOpts.atkLv
               && s.critthrowLv === cmpOpts.critthrowLv && s.shadowLv === cmpOpts.shadowLv
-              && s.masteryLv === cmpOpts.masteryLv && s.mwLv === cmpOpts.mwLv;
-            const buffSame = s.sharp === cmpOpts.sharp && s.horntail === cmpOpts.horntail && s.boss === cmpOpts.boss;
+              && s.mwLv === cmpOpts.mwLv;
+            const sa = sharpStateOf(s), sb = sharpStateOf(cmpOpts);
+            const buffSame = sa.usableSharp === sb.usableSharp && sa.sharpLv === sb.sharpLv && atkBuffOf(s) === atkBuffOf(cmpOpts) && s.boss === cmpOpts.boss;
 
             if (s.level != null && (isBaseSelf || !charSame)) {
               chips.push(`<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-mono">Lv${s.level} · LUK${s.baseLuk}/DEX${s.baseDex}</span>`);
             }
             if (s.atkSkill && (isBaseSelf || !skillSame)) {
               const atkName = s.atkSkill === 'trs' ? '트스' : '럭세';
-              chips.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-mono">${atkName}${s.atkLv}·크${s.critthrowLv}·쉐${s.shadowLv}·마${s.masteryLv}·메용${s.mwLv}</span>`);
+              chips.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-mono">${atkName}${s.atkLv}·크${s.critthrowLv}·쉐${s.shadowLv}·메용${s.mwLv}</span>`);
             }
             if (s.sharp != null && (isBaseSelf || !buffSame)) {
-              const sharpLabel = s.sharp === 'none' ? '샤프X' : s.sharp === 'usable' ? '쓸샾' : '만샤프';
-              chips.push(`<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-mono">${sharpLabel}${s.horntail?'·혼테':''}${s.boss?'·보스':''}</span>`);
+              const _ss = sharpStateOf(s);
+              const sharpLabel = _ss.usableSharp ? '쓸샾' : _ss.sharpLv > 0 ? '샤프' + _ss.sharpLv : '샤프X';
+              const buffName = { iyusik:'이유식', bunno:'분노', horntail:'혼테', pinkbean:'핑크빈' }[atkBuffOf(s)];
+              chips.push(`<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-mono">${sharpLabel}${buffName?'·'+buffName:''}${s.boss?'·보스':''}</span>`);
             }
             // 장비 chip — base 자기자신이면 전체, 아니면 base 와의 diff 만
             const lo = s.loadout || {};
@@ -1080,17 +1048,14 @@
                 <div class="flex flex-wrap gap-1 mb-1.5 items-center">
                   ${chips.length > 0 ? chips.join('') : (isBaseSelf ? '' : `<span class="text-[10px] text-slate-400">옵션 ${cmpLoadoutLabel}와 동일</span>`)}
                   <div class="ml-auto flex items-center gap-2">
-                    <button type="button" data-snap-restore="${preset.id}" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-white hover:bg-emerald-600">📥 적용</button>
-                    <button type="button" data-snap-recapture="${preset.id}" class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500 text-white hover:bg-blue-600">📸 재캡쳐</button>
-                    <button type="button" data-snap-clear="${preset.id}" class="text-[10px] text-slate-500 hover:text-rose-600 hover:underline">캡쳐 해제</button>
+                    <button type="button" data-snap-restore="${preset.id}" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-white hover:bg-emerald-600">📥 세팅에 적용</button>
                   </div>
                 </div>
                 <div class="flex flex-wrap gap-1">${equipChipsHtml}</div>
               </div>`;
           } else {
             snapHtml = `<div class="flex items-center gap-2 pt-1 border-t border-slate-200">
-              <span class="text-[10px] text-slate-400">스냅샷 없음 — 비교 불가</span>
-              <button type="button" data-snap-capture="${preset.id}" class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-blue-500 text-white hover:bg-blue-600">📸 현재 상태 캡쳐 (전체)</button>
+              <span class="text-[10px] text-slate-400">스냅샷 없음 — 세팅 탭에서 새로 추가하세요</span>
             </div>`;
           }
 
@@ -1168,28 +1133,6 @@
             recalc();
           });
         });
-        // 전체 캡쳐 (loadout + opts)
-        const captureHandler = (presetId) => {
-          const p = compares.find(c => c.id === presetId);
-          if (!p) return;
-          p.snapshot = { ...readOpts(), loadout: { ...loadout } };
-          save();
-          renderPresetList();
-          recalc();
-        };
-        list.querySelectorAll('[data-snap-capture]').forEach(b => b.addEventListener('click', () => captureHandler(b.dataset.snapCapture)));
-        list.querySelectorAll('[data-snap-recapture]').forEach(b => b.addEventListener('click', () => {
-          if (!confirm('현재 상태로 다시 캡쳐할까? (기존 캡쳐 덮어씀)')) return;
-          captureHandler(b.dataset.snapRecapture);
-        }));
-        list.querySelectorAll('[data-snap-clear]').forEach(b => b.addEventListener('click', () => {
-          const p = compares.find(c => c.id === b.dataset.snapClear);
-          if (!p) return;
-          p.snapshot = null;
-          save();
-          renderPresetList();
-          recalc();
-        }));
         // 📥 복원: 스냅샷 전체 (loadout + 캐릭터/스킬/버프) 를 현재 셋업으로
         list.querySelectorAll('[data-snap-restore]').forEach(b => b.addEventListener('click', () => {
           const p = compares.find(c => c.id === b.dataset.snapRestore);
@@ -1244,22 +1187,41 @@
           recalc();
         }));
       }
-      // 현재 환산 셋업을 새 프리셋으로 추가 (이름 prompt)
+      // 현재 세팅을 새 프리셋으로 추가 (이름 prompt)
       function addPresetFromCurrent() {
         const def = `프리셋 ${compares.length + 1}`;
         const name = prompt('프리셋 이름을 입력하세요.', def);
         if (name === null) return; // 취소
+        const id = mkPresetId();
         compares.push({
-          id: mkPresetId(),
+          id,
           name: name.trim() || def,
           snapshot: { ...readOpts(), loadout: { ...loadout } },
         });
         save();
         renderPresetList();
+        renderCalcPresetLoader();
+        // 새로 추가한 프리셋을 드롭다운에서 선택
+        const sel = document.getElementById('calc-preset-sel');
+        if (sel) sel.value = id;
         recalc();
       }
-      document.getElementById('add-preset').addEventListener('click', addPresetFromCurrent);
       document.getElementById('calc-add-preset').addEventListener('click', addPresetFromCurrent);
+
+      // 선택 프리셋 수정 — 세팅 탭 드롭다운에서 고른 프리셋을 현재 셋업으로 덮어쓰기 (이름/옵션 토글 유지)
+      function updateSelectedPreset() {
+        const sel = document.getElementById('calc-preset-sel');
+        const id = sel ? sel.value : '';
+        const p = compares.find(c => c.id === id);
+        if (!p) { alert('수정할 프리셋을 드롭다운에서 선택하세요.'); return; }
+        if (!confirm(`'${p.name || '프리셋'}' 를 현재 세팅으로 덮어쓸까?`)) return;
+        p.snapshot = { ...readOpts(), loadout: { ...loadout } };
+        save();
+        renderPresetList();
+        renderCalcPresetLoader();
+        recalc();
+      }
+      document.getElementById('calc-update-preset').addEventListener('click', updateSelectedPreset);
       // 호환성 alias (이전 이름 쓰는 코드가 있을 수 있어서)
       const renderCompareList = renderPresetList;
 
@@ -1272,13 +1234,15 @@
           dispStr: 'disp-str',
           atkSkill: 'atk-skill', atkLv: 'atk-lv',
           critthrowLv: 'critthrow-lv', shadowLv: 'shadow-lv',
-          masteryLv: 'mastery-lv', mwLv: 'mw-lv', sharp: 'sharp',
+          mwLv: 'mw-lv',
+          jeongchukLv: 'jeongchuk-lv', yeochukLv: 'yeochuk-lv',
           book20Price: 'book20-price', book30Price: 'book30-price', resetPrice: 'reset-price',
         };
         Object.entries(map).forEach(([k, id]) => {
           if (s[k] != null) document.getElementById(id).value = s[k];
         });
-        if (s.horntail != null) document.getElementById('horntail').checked = s.horntail;
+        setSharpUI(s);
+        document.getElementById('atk-buff').value = atkBuffOf(s);
         if (s.boss != null) document.getElementById('boss-mode').checked = s.boss;
         if (s.level != null) prevLevel = s.level; // 레벨 델타 기준 동기화
         if (s.loadout) {
@@ -1290,14 +1254,14 @@
         recalc();
       }
 
-      // 환산 탭: 프리셋 불러오기 드롭다운 채우기 (스냅샷 있는 것만, 기준은 📌)
+      // 세팅 탭: 프리셋 불러오기 드롭다운 채우기 (스냅샷 있는 것만, 기준은 📌)
       function renderCalcPresetLoader() {
         const sel = document.getElementById('calc-preset-sel');
         if (!sel) return;
         const withSnap = compares.filter(c => c.snapshot);
         const prev = sel.value;
         if (withSnap.length === 0) {
-          sel.innerHTML = '<option value="">(저장된 프리셋 없음 — 비교 탭에서 캡쳐)</option>';
+          sel.innerHTML = '<option value="">(저장된 프리셋 없음 — 새 프리셋으로 추가)</option>';
           sel.disabled = true;
           return;
         }
@@ -1309,16 +1273,14 @@
         if (basePresetId && withSnap.some(c => c.id === basePresetId)) sel.value = basePresetId;
         else if (prev && withSnap.some(c => c.id === prev)) sel.value = prev;
       }
-      document.getElementById('calc-preset-load').addEventListener('click', () => {
-        const id = document.getElementById('calc-preset-sel').value;
-        const p = compares.find(c => c.id === id);
-        if (!p || !p.snapshot) { alert('불러올 프리셋이 없습니다. 비교 탭에서 먼저 캡쳐하세요.'); return; }
-        if (!confirm(`'${p.name || '프리셋'}' 의 캡쳐 상태로 현재 셋업 전체를 덮어쓸까?`)) return;
-        applyPresetSnapshot(p);
+      // 드롭다운에서 프리셋 선택 시 바로 불러오기
+      document.getElementById('calc-preset-sel').addEventListener('change', (e) => {
+        const p = compares.find(c => c.id === e.target.value);
+        if (p && p.snapshot) applyPresetSnapshot(p);
       });
 
       // 기준 갱신(리베이스): 현재 셋업을 새 기준으로, 다른 프리셋은 (옛 기준 대비) 변경분만 유지하고 새 기준 위에 재적용
-      const REBASE_OPTS_KEYS = ['level','baseLuk','baseDex','dispStr','sharp','horntail','boss','atkSkill','atkLv','critthrowLv','shadowLv','masteryLv','mwLv','book20Price','book30Price','resetPrice'];
+      const REBASE_OPTS_KEYS = ['level','baseLuk','baseDex','dispStr','sharpLv','usableSharp','atkBuff','boss','atkSkill','atkLv','critthrowLv','shadowLv','mwLv','jeongchukLv','yeochukLv','book20Price','book30Price','resetPrice'];
       function rebaseToCurrentSetup() {
         if (!basePresetId) { alert('기준 프리셋을 먼저 지정하세요. (비교 탭에서 프리셋의 📌 기준 지정)'); return; }
         const basePreset = compares.find(c => c.id === basePresetId);
@@ -1335,28 +1297,23 @@
           SLOTS.forEach(s => { if ((sLo[s]||'') !== (oLo[s]||'')) diffs.push(s); });
           return `· ${p.name || '(이름없음)'}: 변경분 ${diffs.length}개 유지`;
         });
-        const optNote = levelChanged ? `\n\n레벨 변경 감지 (${oldBase.level}→${curLevel}) → 부스탯(DEX) 을 현재 장비 최소 요구치로 최적화하고 남는 AP 는 LUK 로 재분배합니다.` : '';
+        const optNote = levelChanged ? `\n\n레벨 변경 감지 (${oldBase.level}→${curLevel}) → 리베이스 대상은 부스탯(DEX) 그대로 두고, 늘어난 AP 는 주스탯(LUK)에만 더합니다.` : '';
         if (!confirm(`현재 셋업을 새 기준으로 삼고, 다른 프리셋 ${others.length}개를 리베이스합니다.\n각 프리셋은 옛 기준 대비 자기 변경분만 유지하고 나머지는 새 기준을 따라갑니다.\n\n${lines.join('\n') || '(리베이스할 다른 프리셋 없음 — 기준만 갱신)'}${optNote}\n\n진행할까요?`)) return;
 
-        // 레벨 변경 시 부스탯 최적화 (현재 셋업 gear 의 requiredBaseDex 로, 총합 보존 재분배)
-        if (levelChanged) {
-          const curEquip = SLOTS.map(s => loadout[s] ? items.find(i => i.id === loadout[s]) : null).filter(Boolean);
-          const reqDex = computeStats(curEquip, readOpts()).requiredBaseDex;
-          const curDex = +document.getElementById('base-dex').value || 0;
-          const curLuk = +document.getElementById('base-luk').value || 0;
-          const newDex = Math.max(4, reqDex);
-          document.getElementById('base-dex').value = newDex;
-          document.getElementById('base-luk').value = Math.max(13, curLuk + curDex - newDex);
-        }
         const newBase = { ...readOpts(), loadout: { ...loadout } };
 
-        // 기준 프리셋 = 새 기준
+        // 기준 프리셋 = 새 기준 (현재 세팅 그대로)
         basePreset.snapshot = { ...newBase, loadout: { ...newBase.loadout } };
-        // 나머지 = 새 기준 + 자기 델타
+        // 나머지 = 새 기준 + 자기 델타. 단 부스탯(DEX)은 타겟 자기 값 유지, 레벨업 AP는 주스탯(LUK)에만.
         others.forEach(p => {
           const s = p.snapshot;
           const ns = { ...newBase };
           REBASE_OPTS_KEYS.forEach(k => { if (s[k] !== oldBase[k]) ns[k] = s[k]; });
+          // 부스탯(DEX): 타겟 자기 값 그대로
+          ns.baseDex = s.baseDex;
+          // 주스탯(LUK): 타겟 자기 값 + (타겟 레벨 변화로 늘어난 AP)
+          const apDelta = totalStatPoints(ns.level || s.level || 0) - totalStatPoints(s.level || 0);
+          ns.baseLuk = (s.baseLuk || 0) + apDelta;
           const sLo = s.loadout || {}, oLo = oldBase.loadout || {};
           const nLo = { ...newBase.loadout };
           SLOTS.forEach(slot => {
@@ -1375,6 +1332,12 @@
       document.getElementById('calc-rebase').addEventListener('click', rebaseToCurrentSetup);
 
       // ============== 계산 공식 ==============
+      // 소환수 공격력 버프 (배타적 — 마지막 선택 하나만). 공% 미포함 별도 가산.
+      const SUMMON_ATK = { none: 0, iyusik: 7, bunno: 10, horntail: 30, pinkbean: 35 };
+      // 옛 스냅샷 호환: atkBuff 없으면 horntail boolean 으로 유추
+      function atkBuffOf(o) { return o.atkBuff != null ? o.atkBuff : (o.horntail ? 'horntail' : 'none'); }
+      function summonAtkOf(o) { return SUMMON_ATK[atkBuffOf(o)] || 0; }
+
       // 풀합산 모델 + floor + 도적 표창 일반공격력 공식
       function computeStats(equip, opts) {
         // 메용 % = ceil(Lv/2). 순수 base AP 기준 flat 보너스, 기어% 곱셈 '밖'에서 합산 (인게임 검증 2026-05-30)
@@ -1460,7 +1423,9 @@
         //   사용자 무기 공%=0 케이스에선 모델 A/B/C 모두 동일 결과라 시드 검증값으로 구분 불가.
         const gearAtk = weaponAtk + sumAtkOther;
         const gearEff = Math.floor(gearAtk * (1 + sumAtkP / 100));
-        const wa = gearEff + thrAtk + (opts.horntail ? 30 : 0);
+        // 정축/여축 = Lv당 +공 1, 공% 미포함 (표창/혼테처럼 별도 가산)
+        const buffAtk = (opts.jeongchukLv || 0) + (opts.yeochukLv || 0);
+        const wa = gearEff + thrAtk + summonAtkOf(opts) + buffAtk;
 
         const stat = Math.floor((totalLuk * 3.6 + totalDex + dispStr) * wa / 100);
         // ===== 최소 base AP + 장비별 활성 임계 base 역산 =====
@@ -1529,16 +1494,56 @@
         return { perHit, hits: s.hits, totalPct: perHit * s.hits };
       }
 
+      // 샤프 아이즈 상태 — 신규 {sharpLv, usableSharp} / 옛 sharp('none'|'usable'|'max') 호환
+      function sharpStateOf(o) {
+        if (o.usableSharp != null || o.sharpLv != null) return { usableSharp: !!o.usableSharp, sharpLv: o.sharpLv || 0 };
+        if (o.sharp === 'usable') return { usableSharp: true, sharpLv: 0 };
+        if (o.sharp === 'max') return { usableSharp: false, sharpLv: 30 };
+        return { usableSharp: false, sharpLv: 0 };
+      }
+      // 샤프 → [크확%, 크댐%] + 라벨. 쓸샾 = 10/+15 고정, Lv = 크확 ceil(L/2) / 크댐 (10+L)
+      function sharpEffect(o, gloveSseulshap) {
+        const st = sharpStateOf(o);
+        let crit = 0, dmg = 0, label = '샤프X', fromGlove = false;
+        if (st.usableSharp) { crit = 10; dmg = 15; label = '쓸샾'; }
+        else if (st.sharpLv > 0) { crit = Math.ceil(st.sharpLv / 2); dmg = 10 + st.sharpLv; label = '샤프' + st.sharpLv; }
+        // 장갑 쓸샾: 샤프 없을 때만 쓸샾 보장 (옛 동작 유지)
+        if (gloveSseulshap && !st.usableSharp && st.sharpLv === 0) { crit = 10; dmg = 15; label = '쓸샾'; fromGlove = true; }
+        return { crit, dmg, label, fromGlove };
+      }
+
+      // 샤프 UI 컨트롤 (Lv 입력 + 쓸샾 체크박스)
+      function renderSharpControl() {
+        const cb = document.getElementById('sharp-usable');
+        const lvInput = document.getElementById('sharp-lv');
+        const info = document.getElementById('sharp-info');
+        const usable = cb.checked;
+        lvInput.disabled = usable;
+        lvInput.classList.toggle('opacity-40', usable);
+        const lv = +lvInput.value || 0;
+        if (usable) info.textContent = '크확 10% / 크댐 +15%';
+        else if (lv > 0) info.textContent = `크확 ${Math.ceil(lv/2)}% / 크댐 +${10+lv}%`;
+        else info.textContent = '';
+      }
+      function setSharpUsable(on) {
+        document.getElementById('sharp-usable').checked = on;
+        renderSharpControl();
+      }
+      // 스냅샷/설정 → 샤프 UI 반영
+      function setSharpUI(o) {
+        const st = sharpStateOf(o);
+        document.getElementById('sharp-lv').value = st.sharpLv;
+        document.getElementById('sharp-usable').checked = st.usableSharp;
+        renderSharpControl();
+      }
+
       // 공격/크리/쉐파 데미지 — LS/TT 는 특수 공식 (LUK×5 / LUK×2.5)
       function computeAttackDamage(stat, opts, statsObj) {
-        const sharpMap = { none: [0, 0], usable: [10, 15], max: [15, 40] };
-        // 장갑에 쓸샾이 박혀있으면 최소 쓸샾 보장 (글로벌 샤프가 더 강하면 그쪽 적용)
-        const sharpLevel = { none: 0, usable: 1, max: 2 };
-        let effSharp = opts.sharp;
-        const sharpFromGlove = statsObj.sseulshapEquipped && sharpLevel[effSharp] < 1;
-        if (sharpFromGlove) effSharp = 'usable';
-        const sharpCrit = sharpMap[effSharp][0];
-        const sharpDmg = sharpMap[effSharp][1];
+        const sharpE = sharpEffect(opts, statsObj.sseulshapEquipped);
+        const sharpCrit = sharpE.crit;
+        const sharpDmg = sharpE.dmg;
+        const effSharpLabel = sharpE.label;
+        const sharpFromGlove = sharpE.fromGlove;
 
         // 크리스로우 레벨별
         const critLv = opts.critthrowLv || 0;
@@ -1579,21 +1584,18 @@
         const shadowSkillPct = shadowLv > 0 ? SKILL_DATA.shadow.skill[shadowLv] : 0;
         const shadowMult = 1 + shadowSkillPct / 100;
 
-        const totalDmgMult = 1 + potTotalDmg / 100;
-        const bossMult = opts.boss ? (1 + potBossDmg / 100) : 1.0;
-        // 한 사이클 (모든 hits) 멀티플라이어
-        const cycleMult = hits * shadowMult * totalDmgMult * bossMult;
+        // 총뎀% 와 보공% 는 서로 합연산 (자막 검증: "보공과 데미지 합연산 → 보공 높으면 데미지 효율 ↓")
+        //   → (1 + 총뎀% + 보공%[보스전]) 한 덩어리로 곱. (1+총뎀)(1+보공) 곱연산 아님.
+        const dmgBossMult = 1 + (potTotalDmg + (opts.boss ? potBossDmg : 0)) / 100;
+        // 한 사이클 (모든 hits) 멀티플라이어 — 쉐파(분신)는 별도 타격이라 곱연산 유지
+        const cycleMult = hits * shadowMult * dmgBossMult;
         // 1타 멀티플라이어 (쉐파 X)
-        const oneHitMult = totalDmgMult * bossMult;
+        const oneHitMult = dmgBossMult;
 
         // 기댓값 (per hit) — 일반/크리 평균 × 크리 확률
         const perHitAvgNoCrit = (perHitMin + perHitMax) / 2;
         const perHitAvgCrit = (perHitCritMin + perHitCritMax) / 2;
         const perHitExpected = (1 - totalCrit / 100) * perHitAvgNoCrit + (totalCrit / 100) * perHitAvgCrit;
-
-        // 마스터리 (LS/TT 미적용. 표시만 함)
-        const masteryLv = opts.masteryLv || 0;
-        const masteryPct = masteryLv > 0 ? SKILL_DATA.mastery.pct(masteryLv) : 0;
 
         return {
           // 사이클 (쉐파 포함)
@@ -1610,10 +1612,10 @@
           // 기타
           trsExpectedPct: (perHitExpected * hits / stat) * 100, // 호환
           shadowMult, shadowSkillPct, totalCrit, perCrit,
-          masteryPct, hits, skillDmgPct, LUK, WA,
-          effSharp, sharpFromGlove,
+          hits, skillDmgPct, LUK, WA,
+          effSharpLabel, sharpFromGlove,
           // N방컷용 raw 값 (WDEF 적용 전 스공)
-          statMax, statMin, totalDmgMult, bossMult,
+          statMax, statMin, dmgBossMult,
         };
       }
       // 호환성 alias (기존 호출 코드)
@@ -1635,8 +1637,8 @@
         // WDEF / 레벨 차감 (README 4.6)
         const adjStatMax = Math.max(0, dmg.statMax * (1 - 0.01*D) - wdef * 0.5);
         const adjStatMin = Math.max(0, dmg.statMin * (1 - 0.01*D) - wdef * 0.6);
-        // hit 분포 (oneHitMult = totalDmg × boss 까지 적용)
-        const oneHitMult = dmg.totalDmgMult * dmg.bossMult;
+        // hit 분포 (총뎀+보공 합연산 배율)
+        const oneHitMult = dmg.dmgBossMult;
         const hitNoCritMin = adjStatMin * (dmg.skillDmgPct / 100) * oneHitMult;
         const hitNoCritMax = adjStatMax * (dmg.skillDmgPct / 100) * oneHitMult;
         const hitCritMin   = adjStatMin * (dmg.skillDmgPct + dmg.perCrit) / 100 * oneHitMult;
@@ -1702,12 +1704,7 @@
           };
         });
 
-        // 깡 LUK 1 → 최종 LUK 증가량
-        const sPlus = computeStats([...baseEquip, { id:'_v', slot:'훈장', luk: 100 }], opts);
-        const perLuk = (sPlus.totalLuk - baseStats.totalLuk) / 100;
-
         document.getElementById('cv-luk').textContent = baseStats.totalLuk;
-        document.getElementById('cv-perluk').textContent = perLuk.toFixed(2);
         document.getElementById('convert-list').innerHTML = rows.map(r => `
           <div class="flex items-center justify-between border border-slate-200 rounded px-2.5 py-1.5">
             <div class="text-xs text-slate-700">
@@ -1724,14 +1721,16 @@
           baseLuk: +document.getElementById('base-luk').value || 0,
           baseDex: +document.getElementById('base-dex').value || 0,
           dispStr: +document.getElementById('disp-str').value || 0,
-          sharp: document.getElementById('sharp').value,
-          horntail: document.getElementById('horntail').checked,
+          sharpLv: +document.getElementById('sharp-lv').value || 0,
+          usableSharp: document.getElementById('sharp-usable').checked,
+          atkBuff: document.getElementById('atk-buff').value,
+          jeongchukLv: +document.getElementById('jeongchuk-lv').value || 0,
+          yeochukLv: +document.getElementById('yeochuk-lv').value || 0,
           boss: document.getElementById('boss-mode').checked,
           atkSkill: document.getElementById('atk-skill').value,
           atkLv: +document.getElementById('atk-lv').value || 0,
           critthrowLv: +document.getElementById('critthrow-lv').value || 0,
           shadowLv: +document.getElementById('shadow-lv').value || 0,
-          masteryLv: +document.getElementById('mastery-lv').value || 0,
           mwLv: +document.getElementById('mw-lv').value || 0,
           book20Price: +document.getElementById('book20-price').value || 0,
           book30Price: +document.getElementById('book30-price').value || 0,
@@ -1757,12 +1756,14 @@
           dispStr: 'disp-str',
           atkSkill: 'atk-skill', atkLv: 'atk-lv',
           critthrowLv: 'critthrow-lv', shadowLv: 'shadow-lv',
-          masteryLv: 'mastery-lv', mwLv: 'mw-lv', sharp: 'sharp',
+          mwLv: 'mw-lv',
+          jeongchukLv: 'jeongchuk-lv', yeochukLv: 'yeochuk-lv',
         };
         Object.entries(map).forEach(([k, id]) => {
           if (savedConfig[k] != null) document.getElementById(id).value = savedConfig[k];
         });
-        if (savedConfig.horntail != null) document.getElementById('horntail').checked = savedConfig.horntail;
+        if (savedConfig.usableSharp != null || savedConfig.sharpLv != null || savedConfig.sharp != null) setSharpUI(savedConfig);
+        if (savedConfig.atkBuff != null || savedConfig.horntail != null) document.getElementById('atk-buff').value = atkBuffOf(savedConfig);
         if (savedConfig.boss != null) document.getElementById('boss-mode').checked = savedConfig.boss;
         if (savedConfig.book20Price != null) document.getElementById('book20-price').value = savedConfig.book20Price || '';
         if (savedConfig.book30Price != null) document.getElementById('book30-price').value = savedConfig.book30Price || '';
@@ -1772,6 +1773,7 @@
         if (savedConfig.mobLv != null) document.getElementById('mob-lv').value = savedConfig.mobLv;
       }
       applySavedConfig();
+      renderSharpControl();
 
       function recalc() {
         const opts = readOpts();
@@ -1791,51 +1793,28 @@
 
         document.getElementById('r-luk').textContent = baseStats.totalLuk;
         document.getElementById('r-dex').textContent = baseStats.totalDex;
-        document.getElementById('r-wa').textContent = baseStats.wa;
         document.getElementById('r-stat').textContent = baseStats.stat.toLocaleString();
-        document.getElementById('r-trs-nocrit').textContent =
-          `${baseDmg.noCritMin.toLocaleString()} ~ ${baseDmg.noCritMax.toLocaleString()}`;
-        document.getElementById('r-trs-crit').textContent =
-          `${baseDmg.critMin.toLocaleString()} ~ ${baseDmg.critMax.toLocaleString()}`;
         document.getElementById('r-trs-exp').textContent = baseDmg.expected.toLocaleString();
         document.getElementById('r-1hit-nocrit').textContent =
           `${baseDmg.oneHitNoCritMin.toLocaleString()} ~ ${baseDmg.oneHitNoCritMax.toLocaleString()}`;
         document.getElementById('r-1hit-crit').textContent =
           `${baseDmg.oneHitCritMin.toLocaleString()} ~ ${baseDmg.oneHitCritMax.toLocaleString()}`;
-        const skillLabel = opts.atkSkill === 'trs' ? '트스 3타' : '럭세 2타';
-        document.getElementById('r-skill-label').textContent = '— ' + skillLabel;
-        // Effective sharp 표시 (외부 / 장갑 보장 / 없음)
+        // Effective sharp 표시
         const sharpInfoEl = document.getElementById('r-sharp-info');
-        const sharpLabel = baseDmg.effSharp === 'max' ? '만샤프' : baseDmg.effSharp === 'usable' ? '쓸샾' : '샤프 X';
-        const sharpSource = baseDmg.effSharp === 'none'
-          ? { cls: 'bg-slate-100 text-slate-500', src: '' }
-          : baseDmg.sharpFromGlove
-            ? { cls: 'bg-orange-100 text-orange-700', src: '장갑 자체 보장' }
-            : { cls: 'bg-amber-100 text-amber-700', src: '외부' };
-        sharpInfoEl.className = 'text-[9px] px-1 py-0.5 rounded font-semibold normal-case ' + sharpSource.cls;
-        sharpInfoEl.textContent = sharpSource.src ? `${sharpLabel} · ${sharpSource.src}` : sharpLabel;
-        document.getElementById('r-pct').textContent =
-          `${(baseDmg.trsExpectedPct * baseDmg.shadowMult).toFixed(0)}%`;
+        const sharpLabel = baseDmg.effSharpLabel;
+        const sharpCls = sharpLabel === '샤프X' ? 'bg-slate-100 text-slate-500' : 'bg-amber-100 text-amber-700';
+        sharpInfoEl.className = 'text-[9px] px-1 py-0.5 rounded font-semibold normal-case ' + sharpCls;
+        sharpInfoEl.textContent = sharpLabel;
 
         // 스킬 정보 라벨
-        const atkS = opts.atkSkill, atkL = opts.atkLv;
-        const atkSkillName = atkS === 'trs' ? '트스' : '럭세';
-        const atkPerHit = SKILL_DATA[atkS].dmg[atkL] || 0;
-        const atkHits = SKILL_DATA[atkS].hits;
-        document.getElementById('atk-info').textContent =
-          atkL > 0 ? `${atkSkillName} ${atkL}: ${atkPerHit}% × ${atkHits}타 = ${atkPerHit*atkHits}%` : '—';
         const cL = opts.critthrowLv;
         document.getElementById('critthrow-info').textContent =
-          cL > 0 ? `크확 ${SKILL_DATA.critthrow.rate(cL)}% / 크리데미지 ${110+3*cL}% (+${SKILL_DATA.critthrow.perCritPp(cL)}%p)` : '없음';
-        const sL = opts.shadowLv;
-        document.getElementById('shadow-info').textContent =
-          sL > 0 ? `스킬 데미지 ${SKILL_DATA.shadow.skill[sL]}% → ×${(1+SKILL_DATA.shadow.skill[sL]/100).toFixed(2)}` : '없음';
-        const mL = opts.masteryLv;
-        document.getElementById('mastery-info').textContent =
-          mL > 0 ? `${SKILL_DATA.mastery.pct(mL)}% (트스/럭세는 미적용 — 특수공식 자체 변동)` : '없음';
+          cL > 0 ? `크확 ${SKILL_DATA.critthrow.rate(cL)}% / 크리데미지 ${110+3*cL}%` : '없음';
         const mwL = opts.mwLv;
         document.getElementById('mw-info').textContent =
-          mwL > 0 ? `모든 스탯 +${Math.ceil(mwL/2)}% (순 AP boost: LUK +${Math.floor(opts.baseLuk*Math.ceil(mwL/2)/100)}, DEX +${Math.floor(opts.baseDex*Math.ceil(mwL/2)/100)})` : '없음';
+          mwL > 0 ? `LUK +${Math.floor(opts.baseLuk*Math.ceil(mwL/2)/100)} / DEX +${Math.floor(opts.baseDex*Math.ceil(mwL/2)/100)}` : '없음';
+        document.getElementById('jeongchuk-atk').textContent = opts.jeongchukLv || 0;
+        document.getElementById('yeochuk-atk').textContent = opts.yeochukLv || 0;
 
         // 총 스탯 통계
         const cell = (label, val, unit='', color='', bg='bg-slate-50') => {
@@ -1856,7 +1835,7 @@
         //   공% 포함 = 무기 + 장갑 (gear)
         //   공% 미포함 = 표창 + 혼테 + (향후 버프공/이유식/정축 등)
         const atkWithPct = baseStats.weaponAtk + baseStats.sumAtkOther;
-        const atkNoPct = baseStats.thrAtk + (opts.horntail ? 30 : 0);
+        const atkNoPct = baseStats.thrAtk + summonAtkOf(opts) + (opts.jeongchukLv || 0) + (opts.yeochukLv || 0);
         document.getElementById('summary-atk').innerHTML =
           cell('공% 포함 (무기+장갑)', atkWithPct, '', 'text-orange-600', 'bg-orange-50') +
           cell('공% 미포함 (표창+버프)', atkNoPct, '', 'text-slate-700');
@@ -1898,23 +1877,12 @@
             </div>`;
           }).join('');
           ncutEl.innerHTML = `
-            <div class="grid grid-cols-2 gap-1.5 text-[10px]">
-              <div class="bg-slate-50 rounded px-2 py-1">
-                <div class="text-slate-500">D (몹Lv-캐릭Lv)</div>
-                <div class="font-mono font-semibold">${nc.D}</div>
-              </div>
-              <div class="bg-slate-50 rounded px-2 py-1">
-                <div class="text-slate-500">1 사이클 평균</div>
-                <div class="font-mono font-semibold">${Math.round(nc.cycleMean).toLocaleString()} <span class="text-slate-400">±${Math.round(nc.cycleStd).toLocaleString()}</span></div>
-              </div>
-            </div>
             <div class="flex flex-wrap gap-1">
               ${thChip('🎯 50%', nc.th50, 'bg-amber-100 text-amber-700')}
               ${thChip('✓ 95%', nc.th95, 'bg-emerald-100 text-emerald-700')}
               ${thChip('★ 99%', nc.th99, 'bg-blue-100 text-blue-700')}
             </div>
             <div class="space-y-0.5">${rows}</div>
-            <div class="text-[9px] text-slate-400">정규 근사 · WDEF 차감 후 스공 분포 기준 · D≥0 일 때만 차감</div>
           `;
         } else {
           ncutEl.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-2">몹 HP 입력하면 N방컷 표시</p>';
@@ -1924,7 +1892,9 @@
         const reqSection = document.getElementById('reqdex-section');
         const reqContent = document.getElementById('reqdex-content');
         const inactiveItems = baseEquip.filter(it => baseStats.inactiveIds.has(it.id));
-        const reqBase = baseStats.requiredBaseDex;
+        // 메용 포함 토글 OFF 면 메용 boost 빼고 요구치 재계산
+        let reqBase = baseStats.requiredBaseDex;
+        if (!reqIncludeMw && opts.mwLv > 0) reqBase = computeStats(baseEquip, { ...opts, mwLv: 0 }).requiredBaseDex;
         const curBase = opts.baseDex;
         const hasRequired = baseEquip.some(it => (it.reqDex || 0) > 0);
 
@@ -1950,7 +1920,7 @@
           const fmtBase = (v) => `${v} <span class="text-[10px] text-slate-400 font-normal">(4+${Math.max(0, v - 4)})</span>`;
           parts.push(`
             <div class="grid grid-cols-3 gap-1.5">
-              <div class="rounded border ${boxClass} px-2 py-1.5">
+              <div class="rounded border ${boxClass} px-2 py-0.5">
                 <div class="flex items-center justify-between gap-1">
                   <span class="text-[10px] text-slate-500">필요 순수 DEX</span>
                   <button type="button" id="optimize-dex-btn" ${isOptimal ? 'disabled' : ''}
@@ -1959,19 +1929,16 @@
                 </div>
                 <div class="font-mono font-bold text-sm ${txtClass}">${fmtBase(reqBase)}</div>
               </div>
-              <div class="rounded border border-slate-200 bg-slate-50 px-2 py-1.5">
+              <div class="rounded border border-slate-200 bg-slate-50 px-2 py-0.5">
                 <div class="text-[10px] text-slate-500">현재 순수 DEX</div>
                 <div class="font-mono font-bold text-sm text-slate-700">${fmtBase(curBase)}</div>
               </div>
-              <div class="rounded border ${boxClass} px-2 py-1.5">
+              <div class="rounded border ${boxClass} px-2 py-0.5">
                 <div class="text-[10px] text-slate-500">${shortage > 0 ? '부족' : '여유'}</div>
                 <div class="font-mono font-bold text-sm ${txtClass}">${shortage > 0 ? '-' + shortage : '+' + (curBase - reqBase)}</div>
               </div>
             </div>
           `);
-          if (opts.mwLv > 0) {
-            parts.push(`<div class="text-[10px] text-slate-500">메용 Lv${opts.mwLv} 포함 boost 기준. AP 빼고 끄면 boost 없어져서 필요치 더 올라감.</div>`);
-          }
           if (inactiveItems.length > 0) {
             const names = inactiveItems.map(it => `<span class="inline-block px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 text-[10px] font-semibold mr-1">${it.name} (${it.reqDex})</span>`).join('');
             parts.push(`<div class="border-t border-rose-100 pt-1.5">
@@ -1990,45 +1957,44 @@
               if (last && last.baseNeeded === s.baseNeeded) last.items.push(s);
               else groups.push({ baseNeeded: s.baseNeeded, items: [s] });
             });
-            // chain: 14(4) +5 19(1) +3 22 — 현재 base 부터 첫 그룹까지 / 그룹 간 증분
-            const chainParts = [];
-            // 현재 base → 첫 그룹 (도달 안 했을 때만)
-            const firstGroup = groups[0];
-            if (curBase < firstGroup.baseNeeded) {
-              chainParts.push(`<span class="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-mono">현재 ${curBase}</span>`);
-              chainParts.push(`<span class="text-rose-500 text-[10px] font-mono font-semibold mx-1">+${firstGroup.baseNeeded - curBase}</span>`);
-            }
-            groups.forEach((g, i) => {
-              const reached = curBase >= g.baseNeeded;
-              const cls = reached ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
-              const titles = g.items.map(it => `${it.name} (요구 ${it.reqDex})`).join(', ');
-              chainParts.push(`<span class="inline-block px-1.5 py-0.5 rounded ${cls} text-[10px] font-mono font-semibold whitespace-nowrap" title="${titles}">${g.baseNeeded}</span>`);
-              if (i < groups.length - 1) {
-                const delta = groups[i + 1].baseNeeded - g.baseNeeded;
-                chainParts.push(`<span class="text-slate-400 text-[10px] font-mono mx-1">+${delta}</span>`);
-              }
+            // 세로 타임라인: [4] 기본 → 세로선(+Δ) → [baseNeeded] 활성장비칩(줄바꿈)
+            const BASE_DEX = 4;
+            const seg = [];
+            seg.push(`<div class="flex items-center gap-2">
+              <span class="inline-flex items-center justify-center w-9 h-6 rounded-md bg-slate-200 text-slate-500 font-mono font-bold text-xs flex-shrink-0">${BASE_DEX}</span>
+              <span class="text-[10px] text-slate-400">기본</span>
+            </div>`);
+            let prevB = BASE_DEX;
+            groups.forEach(g => {
+              const delta = g.baseNeeded - prevB;
+              const items = g.items.map(it => `<span class="inline-block px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 text-[10px] whitespace-nowrap">${it.name} <span class="text-slate-400">(${it.reqDex})</span></span>`).join('');
+              seg.push(`<div class="flex items-center gap-2 h-5"><span class="w-9 flex justify-center flex-shrink-0"><span class="w-px h-full bg-slate-300"></span></span><span class="text-xs text-blue-500 font-mono font-semibold">+${delta}</span></div>`);
+              seg.push(`<div class="flex items-start gap-2">
+                <span class="inline-flex items-center justify-center w-9 h-6 rounded-md bg-slate-200 text-slate-600 font-mono font-bold text-xs flex-shrink-0">${g.baseNeeded}</span>
+                <span class="flex flex-wrap gap-1 min-w-0 pt-0.5">${items}</span>
+              </div>`);
+              prevB = g.baseNeeded;
             });
-            const chain = chainParts.join('');
-            // detail: 그룹별로 묶어서
-            const detail = groups.map(g => {
-              const reached = curBase >= g.baseNeeded;
-              const colorCls = reached ? 'text-emerald-700' : 'text-rose-700';
-              const items = g.items.map(it => `<span class="inline-block px-1 py-0 rounded bg-white border border-slate-200 text-slate-700 mr-1 mb-0.5">${it.name}<span class="text-slate-400 ml-1">(요구 ${it.reqDex})</span></span>`).join('');
-              return `<div class="flex items-start gap-1.5 text-[10px] py-0.5">
-                <span class="font-mono font-semibold w-8 flex-shrink-0 ${colorCls}">${g.baseNeeded}</span>
-                <span class="text-slate-400">·</span>
-                <span class="flex-1 flex flex-wrap">${items}</span>
-              </div>`;
-            }).join('');
             parts.push(`<div class="border-t border-rose-100 pt-1.5 mt-1.5">
-              <div class="text-[10px] text-slate-500 mb-1">활성화 필요 순수 DEX 순서 · 단계별 증분</div>
-              <div class="flex flex-wrap items-center gap-y-1 mb-1.5">${chain}</div>
-              <div class="bg-slate-50 rounded p-1.5">${detail}</div>
-              <div class="text-[9px] text-slate-400 mt-1">초록 = 현재 base DEX(${curBase})로 도달, 빨강 = 부족</div>
+              <div class="text-[10px] text-slate-500 mb-1.5">활성화 필요 순수 DEX 순서</div>
+              <div>${seg.join('')}</div>
             </div>`);
           }
 
           reqContent.innerHTML = parts.join('');
+
+          // 메용 포함 토글 — 제목 옆 슬롯에 렌더
+          const mwSlot = document.getElementById('reqdex-mw-slot');
+          if (opts.mwLv > 0) {
+            mwSlot.innerHTML = `<label class="flex items-center gap-1 text-[10px] text-slate-500 font-normal cursor-pointer"><input type="checkbox" id="req-mw-toggle" ${reqIncludeMw ? 'checked' : ''}> 메용 포함</label>`;
+            document.getElementById('req-mw-toggle').addEventListener('change', (e) => {
+              reqIncludeMw = e.target.checked;
+              localStorage.setItem('mp_req_inc_mw', reqIncludeMw ? '1' : '0');
+              recalc();
+            });
+          } else {
+            mwSlot.innerHTML = '';
+          }
 
           // 최적화 버튼: 부스탯을 필요치로 맞추고, 옮긴 만큼만 LUK 가감 (총합·오프셋 보존)
           const optBtn = document.getElementById('optimize-dex-btn');
@@ -2156,13 +2122,9 @@
           const isBase = extra.isBase;
           const color = isBase ? 'text-orange-600' : (dDmg > 0 ? 'text-green-600' : (dDmg < 0 ? 'text-red-500' : 'text-slate-500'));
           const pctLabel = isBase ? '기준' : `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
-          const sharpLbl = dmg.effSharp === 'max' ? '만샤프' : dmg.effSharp === 'usable' ? '쓸샾' : '샤프X';
-          const sharpInfo = dmg.effSharp === 'none'
-            ? { cls: 'bg-slate-100 text-slate-500', src: '' }
-            : dmg.sharpFromGlove
-              ? { cls: 'bg-orange-100 text-orange-700', src: '장갑보장' }
-              : { cls: 'bg-amber-100 text-amber-700', src: '외부' };
-          const sharpChip = `<span class="inline-block px-1 py-0 rounded ${sharpInfo.cls} text-[9px] font-semibold ml-1">${sharpLbl}${sharpInfo.src ? '·'+sharpInfo.src : ''}</span>`;
+          const sharpLbl = dmg.effSharpLabel;
+          const sharpCls2 = sharpLbl === '샤프X' ? 'bg-slate-100 text-slate-500' : 'bg-amber-100 text-amber-700';
+          const sharpChip = `<span class="inline-block px-1 py-0 rounded ${sharpCls2} text-[9px] font-semibold ml-1">${sharpLbl}</span>`;
           const warnHtml = (stats && stats.inactiveIds && stats.inactiveIds.size > 0)
             ? `<div class="text-[10px] text-rose-600 font-semibold">⚠ ${stats.inactiveIds.size}개 미적용 · 필요 DEX ${stats.requiredBaseDex} (-${Math.max(0, stats.requiredBaseDex - opts2.baseDex)})</div>`
             : '';
@@ -2216,16 +2178,11 @@
         const ordered = baseRes ? [baseRes, ...otherRes] : otherRes;
         ordered.forEach(({ preset, altOpts, altStats, altDmg }) => {
           const isBase = preset.id === basePresetId;
-          const snapBadge = preset.snapshot
-            ? `<span class="ml-1 inline-block px-1 py-0 rounded bg-blue-100 text-blue-700 text-[9px] font-semibold">📸</span>`
-            : `<span class="ml-1 inline-block px-1 py-0 rounded bg-rose-100 text-rose-700 text-[9px] font-semibold">캡쳐 X</span>`;
           rowMaker(
             preset.name || '(이름 없음)',
             altDmg, altStats, altOpts,
             {
-              snapBadge,
               isBase,
-              sub: preset.snapshot ? '캡쳐된 셋업' : '캡쳐 없음 — 현재 셋업과 동일',
               cost: presetCost(preset),
             }
           );
@@ -2315,11 +2272,18 @@
         recalc();
       }));
       renderSortButtons();
-      ['atk-lv','critthrow-lv','shadow-lv','mastery-lv','mw-lv','book20-price','book30-price','reset-price','mob-hp','mob-wdef','mob-lv'].forEach(id => {
+      ['atk-lv','critthrow-lv','shadow-lv','mw-lv','sharp-lv','jeongchuk-lv','yeochuk-lv','book20-price','book30-price','reset-price','mob-hp','mob-wdef','mob-lv'].forEach(id => {
         document.getElementById(id).addEventListener('input', recalc);
       });
-      ['sharp','atk-skill'].forEach(id => document.getElementById(id).addEventListener('change', recalc));
-      ['horntail','boss-mode'].forEach(id => {
+      ['atk-skill','atk-buff'].forEach(id => document.getElementById(id).addEventListener('change', recalc));
+      // 쓸샾 체크박스
+      document.getElementById('sharp-usable').addEventListener('change', () => {
+        renderSharpControl();
+        recalc();
+      });
+      // 샤프 Lv 입력 시 info 갱신
+      document.getElementById('sharp-lv').addEventListener('input', renderSharpControl);
+      ['boss-mode'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('change', recalc);
       });
@@ -2329,14 +2293,18 @@
         atk: { input: 'atk-lv', max: () => SKILL_DATA[document.getElementById('atk-skill').value].maxLv },
         critthrow: { input: 'critthrow-lv', max: () => SKILL_DATA.critthrow.maxLv },
         shadow:    { input: 'shadow-lv',    max: () => SKILL_DATA.shadow.maxLv },
-        mastery:   { input: 'mastery-lv',   max: () => SKILL_DATA.mastery.maxLv },
         mw:        { input: 'mw-lv',        max: () => 30 },
+        sharp:     { input: 'sharp-lv',     max: () => 30 },
+        jeongchuk: { input: 'jeongchuk-lv', max: () => 20 },
+        yeochuk:   { input: 'yeochuk-lv',   max: () => 12 },
       };
       document.querySelectorAll('[data-max-btn]').forEach(btn => {
         btn.addEventListener('click', () => {
           const cfg = MAX_BTN_MAP[btn.dataset.maxBtn];
           if (!cfg) return;
           document.getElementById(cfg.input).value = cfg.max();
+          // 샤프 MAX 누르면 쓸샾 모드 해제 (Lv 모드로)
+          if (btn.dataset.maxBtn === 'sharp') { setSharpUsable(false); }
           recalc();
         });
       });
