@@ -743,12 +743,22 @@
       fillPresetDropdown();
       document.getElementById('f-weapon-only').classList.toggle('hidden', fSlot.value !== '무기');
 
+      // 입력 스탯으로 기본 아이템 이름 생성 (예: 공8럭16덱6럭퍼9올퍼6)
+      const NAME_PARTS = [
+        ['atk','공'], ['luk','럭'], ['dex','덱'], ['allstat','올'],
+        ['atkp','공퍼'], ['lukp','럭퍼'], ['dexp','덱퍼'], ['allstatp','올퍼'],
+        ['bossdmg','보공'], ['critrate','크확'], ['totaldmg','총뎀'],
+      ];
+      function defaultItemName(it) {
+        const parts = NAME_PARTS.filter(([k]) => (it[k] || 0) !== 0).map(([k, label]) => label + it[k]);
+        return parts.length ? parts.join('') : '(이름 없음)';
+      }
       function readForm() {
         const isWeapon = fSlot.value === '무기';
-        return {
+        const it = {
           id: document.getElementById('f-id').value || null,
           slot: fSlot.value,
-          name: document.getElementById('f-name').value.trim() || '(이름 없음)',
+          name: '', // 아래에서 채움 (입력 비어있으면 스탯 기반 자동 생성)
           luk: +document.getElementById('f-luk').value || 0,
           dex: +document.getElementById('f-dex').value || 0,
           allstat: +document.getElementById('f-allstat').value || 0,
@@ -767,6 +777,9 @@
           // 가격 (억, 소수 허용)
           price: +document.getElementById('f-price').value || 0,
         };
+        const typed = document.getElementById('f-name').value.trim();
+        it.name = typed || defaultItemName(it);
+        return it;
       }
       function clearForm() {
         document.getElementById('f-id').value = '';
@@ -1188,8 +1201,21 @@
         }));
       }
       // 현재 세팅을 새 프리셋으로 추가 (이름 prompt)
+      // 기준(📌) 프리셋 대비 정확히 한 슬롯만 바뀌었으면 그 아이템 이름을 반환 (프리셋 기본 이름용)
+      function singleChangedItemName() {
+        if (!basePresetId) return null;
+        const base = compares.find(c => c.id === basePresetId);
+        const baseLo = base && base.snapshot && base.snapshot.loadout;
+        if (!baseLo) return null;
+        const changed = SLOTS.filter(s => (loadout[s] || '') !== (baseLo[s] || ''));
+        if (changed.length !== 1) return null;
+        const curId = loadout[changed[0]];
+        if (!curId) return null; // 변경이 '제거'면 따라갈 아이템 없음
+        const it = items.find(i => i.id === curId);
+        return it ? it.name : null;
+      }
       function addPresetFromCurrent() {
-        const def = `프리셋 ${compares.length + 1}`;
+        const def = singleChangedItemName() || `프리셋 ${compares.length + 1}`;
         const name = prompt('프리셋 이름을 입력하세요.', def);
         if (name === null) return; // 취소
         const id = mkPresetId();
