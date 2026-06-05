@@ -116,6 +116,45 @@
             <div id="reqdex-content" class="space-y-2 text-xs"></div>
           </section>
 
+          <!-- 스탯 환산 / 총 스탯 통계 (좌측 컬럼 하단, 좁으면 두 줄) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <!-- 스탯 환산 -->
+            <section class="bg-white rounded-lg border border-slate-200 p-3">
+              <div class="flex items-center justify-between mb-1.5">
+                <h2 class="font-semibold text-sm flex items-center gap-2">
+                  <span class="inline-block w-1 h-3 bg-violet-500 rounded"></span>
+                  스탯 환산
+                </h2>
+                <div class="text-[10px] text-slate-500">
+                  현재 LUK <strong id="cv-luk" class="text-slate-800 font-mono">0</strong>
+                </div>
+              </div>
+              <div id="convert-list" class="space-y-1 mt-1"></div>
+            </section>
+
+            <!-- 총 스탯 통계 -->
+            <section class="bg-white rounded-lg border border-slate-200 p-3">
+              <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
+                <span class="inline-block w-1 h-3 bg-blue-500 rounded"></span>
+                총 스탯 통계
+              </h2>
+              <div class="space-y-2">
+                <div>
+                  <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">주스탯 / 부스탯</div>
+                  <div id="summary-stat" class="grid grid-cols-4 gap-1.5"></div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">공격력 <span class="text-orange-500">공%적용 (무기+장갑)</span> / <span class="text-slate-600">공%X (표창)</span></div>
+                  <div id="summary-atk" class="grid grid-cols-2 gap-1.5"></div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">무기 잠재</div>
+                  <div id="summary-pot" class="grid grid-cols-4 gap-1.5"></div>
+                </div>
+              </div>
+            </section>
+          </div>
+
         </div>
 
         <!-- Right: 결과 + 옵션 -->
@@ -224,11 +263,6 @@
                   <input type="number" id="atk-lv" value="0" min="0" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
                   <button type="button" data-max-btn="atk" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
                 </span>
-                <span id="mastery-wrap" class="flex items-center gap-1.5">
-                  <span class="text-slate-500">마스터리</span>
-                  <input type="number" id="mastery-lv" value="0" min="0" max="20" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
-                  <button type="button" data-max-btn="mastery" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
-                </span>
               </div>
 
               <div class="flex items-center gap-1.5">
@@ -244,6 +278,14 @@
                 <span class="text-slate-500">Lv</span>
                 <input type="number" id="shadow-lv" value="0" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
                 <button type="button" data-max-btn="shadow" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 w-16">마스터리</span>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="mastery-lv" value="0" min="0" max="20" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <button type="button" data-max-btn="mastery" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                <span class="text-[10px] text-slate-400">기본공격만 적용</span>
               </div>
             </div>
           </section>
@@ -327,45 +369,6 @@
           </section>
 
         </aside>
-       </div>
-
-       <!-- 스탯 환산 / 총 스탯 통계 (한 줄, 좁으면 두 줄) -->
-       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- 스탯 환산 -->
-          <section class="bg-white rounded-lg border border-slate-200 p-3">
-            <div class="flex items-center justify-between mb-1.5">
-              <h2 class="font-semibold text-sm flex items-center gap-2">
-                <span class="inline-block w-1 h-3 bg-violet-500 rounded"></span>
-                스탯 환산
-              </h2>
-              <div class="text-[10px] text-slate-500">
-                현재 LUK <strong id="cv-luk" class="text-slate-800 font-mono">0</strong>
-              </div>
-            </div>
-            <div id="convert-list" class="space-y-1 mt-1"></div>
-          </section>
-
-          <!-- 총 스탯 통계 -->
-          <section class="bg-white rounded-lg border border-slate-200 p-3">
-            <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
-              <span class="inline-block w-1 h-3 bg-blue-500 rounded"></span>
-              총 스탯 통계
-            </h2>
-            <div class="space-y-2">
-              <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">주스탯 / 부스탯</div>
-                <div id="summary-stat" class="grid grid-cols-4 gap-1.5"></div>
-              </div>
-              <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">공격력 <span class="text-orange-500">공%적용 (무기+장갑)</span> / <span class="text-slate-600">공%X (표창)</span></div>
-                <div id="summary-atk" class="grid grid-cols-2 gap-1.5"></div>
-              </div>
-              <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">무기 잠재</div>
-                <div id="summary-pot" class="grid grid-cols-4 gap-1.5"></div>
-              </div>
-            </div>
-          </section>
        </div>
       </div>
 
@@ -1827,11 +1830,10 @@
         if (savedConfig.mobWdef != null) document.getElementById('mob-wdef').value = savedConfig.mobWdef;
         if (savedConfig.mobLv != null) document.getElementById('mob-lv').value = savedConfig.mobLv;
       }
-      // 공격 스킬에 따라 Lv 칸 / 마스터리 칸 토글 (기본공격 → 마스터리, 트스/럭세 → Lv)
+      // 공격 스킬에 따라 Lv 칸 토글 (기본공격은 레벨 없음, 트스/럭세는 Lv 입력). 마스터리는 항상 노출.
       function syncAtkSkillUI() {
         const basic = document.getElementById('atk-skill').value === 'basic';
         document.getElementById('atk-lv-wrap').classList.toggle('hidden', basic);
-        document.getElementById('mastery-wrap').classList.toggle('hidden', !basic);
       }
       applySavedConfig();
       syncAtkSkillUI();
