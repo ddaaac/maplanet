@@ -1873,7 +1873,9 @@
         const totalLuk = Math.floor((opts.baseDex + sumLuk) * (1 + (sumLukP + sumAllP) / 100)) + mwBoostLuk;
         // 마법사 버프 마력: 정축/여축 = 물공×2, 공버프(이유식/분노 X · 혼테 40/핑크 45 = 공값+10), 메디테이션 직접입력
         const MAGE_SUMMON = { none: 0, iyusik: 0, bunno: 0, horntail: 40, pinkbean: 45 };
-        const buffMag = ((opts.jeongchukLv || 0) + (opts.yeochukLv || 0)) * 2 + (MAGE_SUMMON[atkBuffOf(opts)] || 0) + (opts.mediMag || 0);
+        // 공버프(혼테/핑크)와 메디테이션은 중첩 안 됨 → 큰 값만. 정축/여축(×2)은 별도 합산.
+        const summonOrMedi = Math.max(MAGE_SUMMON[atkBuffOf(opts)] || 0, opts.mediMag || 0);
+        const buffMag = ((opts.jeongchukLv || 0) + (opts.yeochukLv || 0)) * 2 + summonOrMedi;
         const magic = Math.floor((totalInt + sumMag) * (1 + sumMagP / 100)) + buffMag;
         return { totalInt, totalLuk, magic, sumInt, sumIntP, sumLuk, sumLukP, sumAllP, sumMag, sumMagP, sumTotalDmg, sumBossDmg, sumCrit, buffMag, mwBoostInt };
       }
@@ -2050,6 +2052,7 @@
         const js = document.getElementById('job-select');
         if (js) js.value = currentJob;
         const tog = (id, hidden) => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', hidden); };
+        const setTxt = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
         tog('skill-section', mage);
         tog('buff-section', false); // 버프는 공용 (정축/여축/메용/공버프 마법사도 적용)
         setTxt('lbl-buff-atk', mage ? '마버프' : '공버프');
@@ -2064,7 +2067,6 @@
         tog('mage-skill-section', !mage);
         tog('disp-str-wrap', mage);
         tog('r-1hit-crit-box', mage);
-        const setTxt = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
         setTxt('lbl-base-luk', mage ? '순수 INT' : '순수 LUK');
         setTxt('lbl-base-dex', mage ? '순수 LUK' : '순수 DEX');
         setTxt('lbl-r-luk', mage ? '총 INT' : 'LUK');
