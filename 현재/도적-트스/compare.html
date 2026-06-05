@@ -71,7 +71,10 @@
             <div class="grid grid-cols-5 gap-2 items-end">
               <label class="text-xs">
                 <span class="text-slate-500">직업</span>
-                <div class="mt-0.5 px-2 py-1 border border-slate-200 bg-slate-50 rounded text-sm font-medium">도적</div>
+                <select id="job-select" class="w-full mt-0.5 px-2 py-1 border border-slate-300 bg-white rounded text-sm font-medium">
+                  <option value="도적">도적</option>
+                  <option value="마법사">마법사</option>
+                </select>
               </label>
               <label class="text-xs">
                 <span class="text-slate-500">레벨</span>
@@ -79,16 +82,16 @@
                   class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
               </label>
               <label class="text-xs">
-                <span class="text-slate-500">순수 LUK</span>
+                <span class="text-slate-500" id="lbl-base-luk">순수 LUK</span>
                 <input type="number" id="base-luk" value="58"
                   class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
               </label>
               <label class="text-xs">
-                <span class="text-slate-500">순수 DEX</span>
+                <span class="text-slate-500" id="lbl-base-dex">순수 DEX</span>
                 <input type="number" id="base-dex" value="4"
                   class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
               </label>
-              <label class="text-xs">
+              <label class="text-xs" id="disp-str-wrap">
                 <span class="text-slate-500">표기 STR</span>
                 <input type="number" id="disp-str" value="0"
                   class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
@@ -190,19 +193,19 @@
             </div>
             <div class="space-y-1.5">
               <div class="bg-blue-50 rounded px-2 py-1.5">
-                <div class="text-[10px] text-blue-600 font-semibold">기댓값 (사이클 평균)</div>
+                <div class="text-[10px] text-blue-600 font-semibold" id="lbl-r-exp">기댓값 (사이클 평균)</div>
                 <div id="r-trs-exp" class="font-mono text-lg font-bold text-blue-600">0</div>
               </div>
 
               <!-- 1타 데미지 (쉐파 X) — 인게임 검증용 -->
               <div class="border-t border-slate-100 pt-1.5 mt-1.5">
-                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">1타 데미지 <span class="text-slate-400 normal-case">(쉐파 미적용 · 인게임 데미지 숫자랑 매칭)</span></div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1" id="lbl-r-onehit">1타 데미지 <span class="text-slate-400 normal-case">(쉐파 미적용 · 인게임 데미지 숫자랑 매칭)</span></div>
                 <div class="grid grid-cols-2 gap-1.5">
                   <div class="bg-slate-50 rounded px-2 py-1">
-                    <div class="text-[9px] text-slate-500">일반</div>
+                    <div class="text-[9px] text-slate-500" id="lbl-r-1hit-a">일반</div>
                     <div id="r-1hit-nocrit" class="font-mono text-xs font-semibold text-slate-700">0 ~ 0</div>
                   </div>
-                  <div class="bg-slate-50 rounded px-2 py-1">
+                  <div class="bg-slate-50 rounded px-2 py-1" id="r-1hit-crit-box">
                     <div class="text-[9px] text-slate-500">크리</div>
                     <div id="r-1hit-crit" class="font-mono text-xs font-semibold text-slate-700">0 ~ 0</div>
                   </div>
@@ -213,16 +216,16 @@
 
             <div class="grid grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-slate-100 text-xs">
               <div class="bg-slate-50 rounded px-2 py-1.5">
-                <div class="text-[10px] text-slate-500">LUK</div>
+                <div class="text-[10px] text-slate-500" id="lbl-r-luk">LUK</div>
                 <div id="r-luk" class="font-mono font-semibold">0</div>
               </div>
               <div class="bg-slate-50 rounded px-2 py-1.5">
-                <div class="text-[10px] text-slate-500">DEX</div>
+                <div class="text-[10px] text-slate-500" id="lbl-r-dex">DEX</div>
                 <div id="r-dex" class="font-mono font-semibold">0</div>
               </div>
               <div class="bg-orange-50 rounded px-2 py-1.5 relative">
                 <div class="text-[10px] text-orange-600 flex items-center gap-1">
-                  스공
+                  <span id="lbl-r-stat">스공</span>
                   <span class="relative group inline-block">
                     <button type="button" tabindex="0"
                       class="w-3 h-3 inline-flex items-center justify-center rounded-full bg-orange-200 text-orange-700 text-[8px] font-bold leading-none cursor-help"
@@ -243,8 +246,8 @@
             </div>
           </section>
 
-          <!-- 스킬 -->
-          <section class="bg-white rounded-lg border border-slate-200 p-3">
+          <!-- 스킬 (도적) -->
+          <section id="skill-section" class="bg-white rounded-lg border border-slate-200 p-3">
             <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
               <span class="inline-block w-1 h-3 bg-emerald-500 rounded"></span>
               스킬
@@ -290,8 +293,47 @@
             </div>
           </section>
 
-          <!-- 버프 -->
-          <section class="bg-white rounded-lg border border-slate-200 p-3">
+          <!-- 마법 스킬 (마법사) -->
+          <section id="mage-skill-section" class="hidden bg-white rounded-lg border border-slate-200 p-3">
+            <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
+              <span class="inline-block w-1 h-3 bg-violet-500 rounded"></span>
+              마법 스킬
+            </h2>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 font-semibold w-16">스킬</span>
+                <select id="mage-skill" class="flex-1 min-w-0 px-1.5 py-0.5 border border-slate-300 rounded text-xs">
+                  <option value="magic-claw">매직클로(2타)</option>
+                  <option value="thunder-bolt">썬더볼트</option>
+                  <option value="ice-strike">아이스스트라이크</option>
+                  <option value="chain-lightning">체인라이트닝</option>
+                  <option value="blizzard" selected>블리자드</option>
+                  <option value="big-bang">빅뱅</option>
+                </select>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="mage-skill-lv" value="30" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 w-16">앰플</span>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="mage-amp-lv" value="0" min="0" max="20" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <span class="text-[10px] text-slate-400" id="mage-amp-info">총뎀 +0%</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 w-16">원소상성</span>
+                <select id="mage-elem" class="flex-1 min-w-0 px-1.5 py-0.5 border border-slate-300 rounded text-xs">
+                  <option value="1.5">약점 (×1.5)</option>
+                  <option value="1.0" selected>보통 (×1.0)</option>
+                  <option value="0.5">내성 (×0.5)</option>
+                  <option value="0">무효 (×0)</option>
+                </select>
+                <span class="text-[10px] text-slate-400" id="mage-skill-info"></span>
+              </div>
+            </div>
+          </section>
+
+          <!-- 버프 (도적) -->
+          <section id="buff-section" class="bg-white rounded-lg border border-slate-200 p-3">
             <h2 class="font-semibold text-xs mb-2 flex items-center gap-2">
               <span class="inline-block w-1 h-3 bg-amber-500 rounded"></span>
               버프
@@ -475,22 +517,22 @@
               </label>
             </div>
             <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              <label class="text-xs"><span class="text-slate-600">LUK</span>
+              <label class="text-xs"><span class="text-slate-600" id="lbl-f-luk">LUK</span>
                 <input type="number" id="f-luk" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
               </label>
-              <label class="text-xs"><span class="text-slate-600">DEX</span>
+              <label class="text-xs"><span class="text-slate-600" id="lbl-f-dex">DEX</span>
                 <input type="number" id="f-dex" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
               </label>
               <label class="text-xs"><span class="text-slate-600">올스탯</span>
                 <input type="number" id="f-allstat" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
               </label>
-              <label class="text-xs"><span class="text-slate-600">공격력</span>
+              <label class="text-xs"><span class="text-slate-600" id="lbl-f-atk">공격력</span>
                 <input type="number" id="f-atk" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
               </label>
-              <label class="text-xs"><span class="text-slate-600">LUK %</span>
+              <label class="text-xs"><span class="text-slate-600" id="lbl-f-lukp">LUK %</span>
                 <input type="number" id="f-lukp" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
               </label>
-              <label class="text-xs"><span class="text-slate-600">DEX %</span>
+              <label class="text-xs"><span class="text-slate-600" id="lbl-f-dexp">DEX %</span>
                 <input type="number" id="f-dexp" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
               </label>
               <label class="text-xs"><span class="text-slate-600">올스탯%</span>
@@ -503,13 +545,13 @@
             <div id="f-weapon-only" class="hidden bg-orange-50 rounded p-2">
               <div class="text-xs font-semibold text-orange-700 mb-1">무기 전용 잠재</div>
               <div class="grid grid-cols-4 gap-2">
-                <label class="text-xs"><span class="text-slate-600">공%</span>
+                <label class="text-xs"><span class="text-slate-600" id="lbl-f-atkp">공%</span>
                   <input type="number" id="f-atkp" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
                 </label>
                 <label class="text-xs"><span class="text-slate-600">총뎀%</span>
                   <input type="number" id="f-totaldmg" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
                 </label>
-                <label class="text-xs"><span class="text-slate-600">크확%</span>
+                <label class="text-xs" id="lbl-f-critrate-wrap"><span class="text-slate-600">크확%</span>
                   <input type="number" id="f-critrate" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
                 </label>
                 <label class="text-xs"><span class="text-slate-600">보공%</span>
@@ -570,7 +612,8 @@
     <script>
       // ============== State ==============
       const SLOTS = ['무기','표창','모자','상의','하의','신발','장갑','귀고리','망토','목걸이','훈장','방패','반지'];
-      const STORAGE_KEYS = { items: 'mp_items_v1', loadout: 'mp_loadout_v1', compares: 'mp_compares_v1', config: 'mp_config_v1', userDefault: 'mp_userdefault_v1', basePreset: 'mp_basepreset_v1', throwSeeded: 'mp_throw_seeded_v1' };
+      const STORAGE_KEYS = { items: 'mp_items_v1', loadout: 'mp_loadout_v1', compares: 'mp_compares_v1', config: 'mp_config_v1', userDefault: 'mp_userdefault_v1', basePreset: 'mp_basepreset_v1', throwSeeded: 'mp_throw_seeded_v1', job: 'mp_job_v1' };
+      let currentJob = localStorage.getItem(STORAGE_KEYS.job) || '도적'; // '도적' | '마법사'
 
       let items = JSON.parse(localStorage.getItem(STORAGE_KEYS.items) || '[]');
       let loadout = JSON.parse(localStorage.getItem(STORAGE_KEYS.loadout) || '{}'); // {slot: itemId}
@@ -774,6 +817,7 @@
         const it = {
           id: document.getElementById('f-id').value || null,
           slot: fSlot.value,
+          job: currentJob,
           name: '', // 아래에서 채움 (입력 비어있으면 스탯 기반 자동 생성)
           luk: +document.getElementById('f-luk').value || 0,
           dex: +document.getElementById('f-dex').value || 0,
@@ -844,6 +888,8 @@
       document.getElementById('f-save').addEventListener('click', () => {
         const it = readForm();
         if (it.id) {
+          const old = items.find(x => x.id === it.id);
+          if (old && old.job) it.job = old.job; // 편집 시 직업 태그 보존
           items = items.map(x => x.id === it.id ? it : x);
         } else {
           it.id = String(Date.now()) + Math.random().toString(16).slice(2);
@@ -861,14 +907,15 @@
       function renderItemList() {
         const ul = document.getElementById('item-list');
         ul.innerHTML = '';
-        document.getElementById('item-count').textContent = `${items.length}개`;
-        if (items.length === 0) {
+        const jobItems = items.filter(it => (it.job || '도적') === currentJob);
+        document.getElementById('item-count').textContent = `${jobItems.length}개`;
+        if (jobItems.length === 0) {
           ul.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">저장된 아이템 없음. 왼쪽에서 만들어보세요.</p>';
           return;
         }
         // group by slot
         const bySlot = {};
-        items.forEach(it => { (bySlot[it.slot] ||= []).push(it); });
+        jobItems.forEach(it => { (bySlot[it.slot] ||= []).push(it); });
         SLOTS.forEach(slot => {
           if (!bySlot[slot]) return;
           const h = document.createElement('div');
@@ -950,7 +997,7 @@
             const wrap = document.createElement('label');
             wrap.className = 'flex flex-col min-w-0';
             const cur = loadout[slot] || '';
-            const opts = items.filter(i => i.slot === slot)
+            const opts = items.filter(i => i.slot === slot && (i.job || '도적') === currentJob)
               .map(i => `<option value="${i.id}" ${i.id === cur ? 'selected' : ''}>${i.name}${i.sseulshap ? '★' : ''}</option>`).join('');
             wrap.innerHTML = `
               <span class="text-[10px] text-slate-500 leading-tight">${slot}</span>
@@ -1772,6 +1819,65 @@
         `).join('');
       }
 
+      // ============== 마법사 (마력) 계산 — 정본 공식 (메랜 829358 / ayumilove 교차검증) ==============
+      //   MAX = ((마력²/1000 + 마력)/30 + INT/200) × 스킬BA × 원소 × (1+총뎀합/100) × (보스? 1+보공)
+      //   MIN = ((마력²/1000 + 마력×0.9×숙련도)/30 + INT/200) × ...        ← MAX는 0.9 안 곱함(정본)
+      //   앰플(Element Amp) = 총뎀 계열 → 무기 총뎀%와 합연산 (별도 ×배수 아님)
+      const MAGE_SKILLS = {
+        'magic-claw':      { name: '매직클로(2타)',   maxLv: 20, hits: 2, mastery: 60, ba: (L) => 2 * L,        element: 'none' },
+        'thunder-bolt':    { name: '썬더볼트',         maxLv: 30, hits: 1, mastery: 60, ba: (L) => 2 * L,        element: 'lightning' },
+        'ice-strike':      { name: '아이스스트라이크', maxLv: 30, hits: 1, mastery: 60, ba: (L) => 3 * L,        element: 'ice' },
+        'chain-lightning': { name: '체인라이트닝',     maxLv: 30, hits: 1, mastery: 60, ba: (L) => 6 * L,        element: 'lightning' },
+        'blizzard':        { name: '블리자드',         maxLv: 30, hits: 1, mastery: 60, ba: (L) => 420 + 5 * L,  element: 'ice' },
+        'big-bang':        { name: '빅뱅',             maxLv: 30, hits: 1, mastery: 80, ba: (L) => 15 * L,       element: 'none' },
+      };
+      // 앰플(Element Amp) 총뎀% 기여 — 마스터 ≈ 50 (실측 튜닝 예정). Lv0 = 0
+      function mageAmpDmg(L) { return L > 0 ? 5 + 2 * L : 0; }
+
+      // 마법사 스탯: item 필드 재해석 (luk=주스탯 INT, dex=부스탯 LUK, 무기 atk=마력 / atkp=마력%)
+      //   base-luk 입력 = 순수 INT, base-dex 입력 = 순수 LUK (마법사 모드 라벨)
+      function computeMageStats(equip, opts) {
+        const active = equip.filter(Boolean);
+        let sumInt = 0, sumIntP = 0, sumLuk = 0, sumLukP = 0, sumAllP = 0;
+        let sumMag = 0, sumMagP = 0, sumTotalDmg = 0, sumBossDmg = 0;
+        active.forEach(it => {
+          sumInt += (it.luk || 0) + (it.allstat || 0);
+          sumIntP += it.lukp || 0;
+          sumLuk += (it.dex || 0) + (it.allstat || 0);
+          sumLukP += it.dexp || 0;
+          sumAllP += it.allstatp || 0;
+          if (it.slot === '무기') { sumMag += it.atk || 0; sumMagP += it.atkp || 0; }
+          sumTotalDmg += it.totaldmg || 0;
+          sumBossDmg += it.bossdmg || 0;
+        });
+        const totalInt = Math.floor((opts.baseLuk + sumInt) * (1 + (sumIntP + sumAllP) / 100));
+        const totalLuk = Math.floor((opts.baseDex + sumLuk) * (1 + (sumLukP + sumAllP) / 100));
+        const magic = Math.floor((totalInt + sumMag) * (1 + sumMagP / 100));
+        return { totalInt, totalLuk, magic, sumInt, sumIntP, sumLuk, sumLukP, sumAllP, sumMag, sumMagP, sumTotalDmg, sumBossDmg };
+      }
+
+      function computeMageDamage(st, opts) {
+        const M = st.magic, INT = st.totalInt;
+        const sk = MAGE_SKILLS[opts.mageSkill] || MAGE_SKILLS.blizzard;
+        const lv = Math.min(opts.mageSkillLv || 0, sk.maxLv);
+        const BA = sk.ba(lv);
+        const mastery = sk.mastery / 100;
+        const elem = opts.mageElem != null ? opts.mageElem : 1.0;
+        const ampDmg = mageAmpDmg(opts.mageAmpLv || 0);
+        const totalDmgSum = ampDmg + (st.sumTotalDmg || 0);
+        const bossMult = opts.boss ? (1 + (st.sumBossDmg || 0) / 100) : 1;
+        const common = BA * elem * (1 + totalDmgSum / 100) * bossMult;
+        const coreMax = (M * M / 1000 + M) / 30 + INT / 200;
+        const coreMin = (M * M / 1000 + M * 0.9 * mastery) / 30 + INT / 200;
+        return {
+          min: Math.floor(coreMin * common),
+          max: Math.floor(coreMax * common),
+          expected: Math.floor((coreMax + coreMin) / 2 * common),
+          BA, masteryPct: sk.mastery, element: sk.element, hits: sk.hits,
+          ampDmg, totalDmgSum, skillName: sk.name,
+        };
+      }
+
       function readOpts() {
         return {
           level: +document.getElementById('char-level').value || 10,
@@ -1796,6 +1902,12 @@
           mobHP: +document.getElementById('mob-hp').value || 0,
           mobWdef: +document.getElementById('mob-wdef').value || 0,
           mobLv: +document.getElementById('mob-lv').value || 0,
+          // 마법사 전용
+          baseInt: +document.getElementById('base-luk').value || 0, // 마법사 모드에선 base-luk = 순수 INT
+          mageSkill: (document.getElementById('mage-skill') || {}).value || 'blizzard',
+          mageSkillLv: +((document.getElementById('mage-skill-lv') || {}).value) || 0,
+          mageAmpLv: +((document.getElementById('mage-amp-lv') || {}).value) || 0,
+          mageElem: (() => { const v = parseFloat((document.getElementById('mage-elem') || {}).value); return isFinite(v) ? v : 1.0; })(),
         };
       }
 
@@ -1839,7 +1951,112 @@
       syncAtkSkillUI();
       renderSharpControl();
 
+      // ============== 마법사 렌더 + 직업 UI ==============
+      function recalcMage() {
+        const opts = readOpts();
+        const equip = SLOTS.map(s => loadout[s] ? items.find(i => i.id === loadout[s]) : null)
+          .filter(it => it && (it.job || '도적') === '마법사');
+        const st = computeMageStats(equip, opts);
+        const dmg = computeMageDamage(st, opts);
+
+        document.getElementById('r-luk').textContent = st.totalInt.toLocaleString();
+        document.getElementById('r-dex').textContent = st.totalLuk.toLocaleString();
+        document.getElementById('r-stat').textContent = st.magic.toLocaleString();
+        document.getElementById('r-trs-exp').textContent = dmg.expected.toLocaleString();
+        document.getElementById('r-1hit-nocrit').textContent = `${dmg.min.toLocaleString()} ~ ${dmg.max.toLocaleString()}`;
+
+        const ampEl = document.getElementById('mage-amp-info');
+        if (ampEl) ampEl.textContent = `총뎀 +${dmg.ampDmg}%`;
+        const skInfo = document.getElementById('mage-skill-info');
+        if (skInfo) skInfo.textContent = `BA ${dmg.BA} / 숙련 ${dmg.masteryPct}%`;
+        const sharpInfoEl = document.getElementById('r-sharp-info');
+        if (sharpInfoEl) sharpInfoEl.textContent = '';
+
+        const cell = (label, val, unit = '', color = '', bg = 'bg-slate-50') => {
+          const v = (val === 0 || val == null) ? '—' : `${val}${unit}`;
+          const valColor = (val === 0 || val == null) ? 'text-slate-300' : (color || 'text-slate-800');
+          return `<div class="${bg} rounded px-2.5 py-2"><div class="text-[10px] text-slate-500">${label}</div><div class="font-mono font-bold text-base ${valColor}">${v}</div></div>`;
+        };
+        document.getElementById('summary-stat').innerHTML =
+          cell('깡 INT', st.sumInt, '', 'text-blue-600') +
+          cell('INT%', st.sumIntP + st.sumAllP, '%', 'text-blue-600') +
+          cell('깡 LUK', st.sumLuk, '', 'text-purple-600') +
+          cell('LUK%', st.sumLukP + st.sumAllP, '%', 'text-purple-600');
+        document.getElementById('summary-atk').innerHTML =
+          cell('깡 마력 (무기)', st.sumMag, '', 'text-orange-600', 'bg-orange-50') +
+          cell('마력%', st.sumMagP, '%', 'text-orange-600');
+        document.getElementById('summary-pot').innerHTML =
+          cell('총뎀%', st.sumTotalDmg, '%', 'text-rose-600') +
+          cell('보공%', st.sumBossDmg, '%', 'text-rose-600') +
+          cell('앰플총뎀', dmg.ampDmg, '%', 'text-violet-600') +
+          cell('합 총뎀', dmg.totalDmgSum, '%', 'text-rose-600');
+
+        const cvList = document.getElementById('convert-list');
+        if (cvList) cvList.innerHTML = '<p class="text-[10px] text-slate-400 py-2 text-center">마법사 환산 준비 중</p>';
+        const cvLuk = document.getElementById('cv-luk');
+        if (cvLuk) cvLuk.textContent = st.totalInt;
+
+        const ncutEl = document.getElementById('ncut-result');
+        if (opts.mobHP > 0 && dmg.max > 0) {
+          const txt = dmg.min >= opts.mobHP ? '✓ 안정 1킬 (MIN ≥ HP)'
+            : dmg.max >= opts.mobHP ? '△ MAX만 1킬' : '✗ 1킬 불가';
+          const cls = dmg.min >= opts.mobHP ? 'bg-emerald-50 text-emerald-700'
+            : dmg.max >= opts.mobHP ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700';
+          ncutEl.innerHTML = `<div class="${cls} rounded px-2 py-1.5 text-[11px] font-semibold">${txt}</div>
+            <div class="text-[10px] text-slate-500 mt-1">1타 ${dmg.min.toLocaleString()} ~ ${dmg.max.toLocaleString()} · 몹 HP ${opts.mobHP.toLocaleString()}</div>`;
+        } else {
+          ncutEl.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-2">몹 HP 입력하면 1킬 표시</p>';
+        }
+
+        document.getElementById('reqdex-section').classList.add('hidden');
+        document.querySelectorAll('.loadout-sel').forEach(sel => sel.classList.remove('border-rose-500', 'bg-rose-50', 'text-rose-700', 'font-semibold'));
+      }
+
+      function applyJobUI() {
+        const mage = currentJob === '마법사';
+        const js = document.getElementById('job-select');
+        if (js) js.value = currentJob;
+        const tog = (id, hidden) => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', hidden); };
+        tog('skill-section', mage);
+        tog('buff-section', mage);
+        tog('mage-skill-section', !mage);
+        tog('disp-str-wrap', mage);
+        tog('r-1hit-crit-box', mage);
+        const setTxt = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+        setTxt('lbl-base-luk', mage ? '순수 INT' : '순수 LUK');
+        setTxt('lbl-base-dex', mage ? '순수 LUK' : '순수 DEX');
+        setTxt('lbl-r-luk', mage ? '총 INT' : 'LUK');
+        setTxt('lbl-r-dex', mage ? '총 LUK' : 'DEX');
+        setTxt('lbl-r-stat', mage ? '마력' : '스공');
+        setTxt('lbl-r-exp', mage ? '데미지 기댓값 (평균)' : '기댓값 (사이클 평균)');
+        setTxt('lbl-r-1hit-a', mage ? '데미지' : '일반');
+        const onehit = document.getElementById('lbl-r-onehit');
+        if (onehit) onehit.innerHTML = mage ? 'MIN ~ MAX (1타)' : '1타 데미지 <span class="text-slate-400 normal-case">(쉐파 미적용 · 인게임 데미지 숫자랑 매칭)</span>';
+        // 아이템 폼 라벨 (재해석)
+        setTxt('lbl-f-luk', mage ? 'INT(주)' : 'LUK');
+        setTxt('lbl-f-dex', mage ? 'LUK(부)' : 'DEX');
+        setTxt('lbl-f-lukp', mage ? 'INT%' : 'LUK %');
+        setTxt('lbl-f-dexp', mage ? 'LUK%' : 'DEX %');
+        setTxt('lbl-f-atk', mage ? '마력' : '공격력');
+        setTxt('lbl-f-atkp', mage ? '마력%' : '공%');
+        tog('lbl-f-critrate-wrap', mage);
+      }
+      document.getElementById('job-select').addEventListener('change', (e) => {
+        currentJob = e.target.value;
+        localStorage.setItem(STORAGE_KEYS.job, currentJob);
+        applyJobUI();
+        renderItemList();
+        renderLoadout();
+        recalc();
+      });
+      ['mage-skill', 'mage-skill-lv', 'mage-amp-lv', 'mage-elem'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', recalc);
+        if (el) el.addEventListener('change', recalc);
+      });
+
       function recalc() {
+        if (currentJob === '마법사') { recalcMage(); return; }
         const opts = readOpts();
         // 스킬북 기대비용 표시 (프리셋 유무 무관하게 항상 갱신)
         {
@@ -2472,6 +2689,7 @@
       });
 
       // ============== 초기 ==============
+      applyJobUI();
       renderItemList();
       renderLoadout();
       renderPresetList();
