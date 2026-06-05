@@ -230,7 +230,7 @@
                     <button type="button" tabindex="0"
                       class="w-3 h-3 inline-flex items-center justify-center rounded-full bg-orange-200 text-orange-700 text-[8px] font-bold leading-none cursor-help"
                       aria-label="스공 설명">i</button>
-                    <span class="absolute right-0 top-full mt-1 z-30 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[10px] leading-relaxed rounded p-2 w-64 shadow-lg whitespace-normal font-normal">
+                    <span id="r-stat-tip" class="absolute right-0 top-full mt-1 z-30 hidden group-hover:block group-focus-within:block bg-slate-800 text-white text-[10px] leading-relaxed rounded p-2 w-64 shadow-lg whitespace-normal font-normal">
                       <strong class="text-orange-300">스탯공격력 (스공)</strong><br>
                       도적 표창 일반 공격력 MAX (사이트 표시값).<br><br>
                       <code class="text-orange-200">스공 = (LUK × 3.6 + DEX) × 무기공격력 / 100</code><br><br>
@@ -1879,10 +1879,15 @@
         const common = BA * elem * (1 + totalDmgSum / 100) * bossMult;
         const coreMax = (M * M / 1000 + M) / 30 + INT / 200;
         const coreMin = (M * M / 1000 + M * 0.9 * mastery) / 30 + INT / 200;
+        // 마법사 크리: 크리 스킬 없음 → 크리 = 맥스 굴림 보장 (크확만큼 기댓값이 맥스로 당겨짐)
+        const crit = (st.sumCrit || 0) / 100;
+        const normalAvg = (coreMax + coreMin) / 2;
+        const expCore = (1 - crit) * normalAvg + crit * coreMax;
         return {
           min: Math.floor(coreMin * common),
           max: Math.floor(coreMax * common),
-          expected: Math.floor((coreMax + coreMin) / 2 * common),
+          expected: Math.floor(expCore * common),
+          crit: st.sumCrit || 0,
           BA, masteryPct: sk.mastery, element: sk.element, hits: sk.hits,
           ampDmg, totalDmgSum, skillName: sk.name,
         };
@@ -1999,8 +2004,7 @@
         document.getElementById('summary-pot').innerHTML =
           cell('총뎀%', st.sumTotalDmg, '%', 'text-rose-600') +
           cell('크확%', st.sumCrit, '%', 'text-rose-600') +
-          cell('보공%', st.sumBossDmg, '%', 'text-rose-600') +
-          cell('합총뎀', dmg.totalDmgSum, '%', 'text-rose-600');
+          cell('보공%', st.sumBossDmg, '%', 'text-rose-600');
 
         const cvList = document.getElementById('convert-list');
         if (cvList) cvList.innerHTML = '<p class="text-[10px] text-slate-400 py-2 text-center">마법사 환산 준비 중</p>';
@@ -2060,6 +2064,10 @@
         if (throwOpt) throwOpt.hidden = mage; // 마법사는 표창 없음
         const fSlotEl = document.getElementById('f-slot');
         if (mage && fSlotEl && fSlotEl.value === '표창') fSlotEl.value = '무기';
+        const statTip = document.getElementById('r-stat-tip');
+        if (statTip) statTip.innerHTML = mage
+          ? '<strong class="text-orange-300">마력</strong><br>마법사 총 마법 공격력 (스탯창 표시값).<br><br><code class="text-orange-200">마력 = (총INT + 깡마력) × (1 + 마력%/100)</code><br>깡마력 = 전 부위 합산 · 마력% = 무기 잠재<br><br><strong>데미지</strong> = ((마력²/1000 + 마력)/30 + INT/200) × 스킬BA × 원소 × (1+총뎀%)<br>MIN은 마력×0.9×숙련도. 크리 = 맥스 굴림 (크리스킬 없음).'
+          : '<strong class="text-orange-300">스탯공격력 (스공)</strong><br>도적 표창 일반 공격력 MAX (사이트 표시값).<br><br><code class="text-orange-200">스공 = (LUK × 3.6 + DEX) × 무기공격력 / 100</code><br><br><strong>무기공격력</strong> = floor((무기깡공 + 장갑깡공) × (1 + 공격력%/100)) + 표창 + 공격력버프 + 정축/여축<br>(공격력%는 무기+장갑 깡공 합산에만 적용)<br><br>참고용. <strong>럭키 세븐 / 트리플 스로우는 이 값 안 쓰고 LUK × 5 특수 공식 사용.</strong>';
       }
       document.getElementById('job-select').addEventListener('change', (e) => {
         currentJob = e.target.value;
