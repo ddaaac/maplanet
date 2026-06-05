@@ -340,7 +340,7 @@
             </h2>
             <div class="space-y-1.5 text-xs">
               <label class="flex items-center gap-2">
-                <span class="text-slate-700 w-12">공버프</span>
+                <span class="text-slate-700 w-12" id="lbl-buff-atk">공버프</span>
                 <select id="atk-buff" class="w-40 px-2 py-1 border border-slate-300 rounded text-xs">
                   <option value="none">없음</option>
                   <option value="iyusik">이유식 (+7)</option>
@@ -1860,10 +1860,15 @@
           sumTotalDmg += it.totaldmg || 0;
           sumBossDmg += it.bossdmg || 0;
         });
-        const totalInt = Math.floor((opts.baseLuk + sumInt) * (1 + (sumIntP + sumAllP) / 100));
-        const totalLuk = Math.floor((opts.baseDex + sumLuk) * (1 + (sumLukP + sumAllP) / 100));
-        const magic = Math.floor((totalInt + sumMag) * (1 + sumMagP / 100));
-        return { totalInt, totalLuk, magic, sumInt, sumIntP, sumLuk, sumLukP, sumAllP, sumMag, sumMagP, sumTotalDmg, sumBossDmg, sumCrit };
+        // 메용(Maple Hero): 순수스탯 × ceil(Lv/2)% flat boost (기어% 밖). 정축/여축/공버프 = flat 마력 (마력% 밖)
+        const mwPct = (opts.mwLv || 0) > 0 ? Math.ceil(opts.mwLv / 2) : 0;
+        const mwBoostInt = Math.floor((opts.baseLuk || 0) * mwPct / 100);
+        const mwBoostLuk = Math.floor((opts.baseDex || 0) * mwPct / 100);
+        const totalInt = Math.floor((opts.baseLuk + sumInt) * (1 + (sumIntP + sumAllP) / 100)) + mwBoostInt;
+        const totalLuk = Math.floor((opts.baseDex + sumLuk) * (1 + (sumLukP + sumAllP) / 100)) + mwBoostLuk;
+        const buffMag = summonAtkOf(opts) + (opts.jeongchukLv || 0) + (opts.yeochukLv || 0); // 공버프+정축+여축 = flat 마력
+        const magic = Math.floor((totalInt + sumMag) * (1 + sumMagP / 100)) + buffMag;
+        return { totalInt, totalLuk, magic, sumInt, sumIntP, sumLuk, sumLukP, sumAllP, sumMag, sumMagP, sumTotalDmg, sumBossDmg, sumCrit, buffMag, mwBoostInt };
       }
 
       function computeMageDamage(st, opts) {
@@ -1880,7 +1885,7 @@
         const coreMax = (M * M / 1000 + M) / 30 + INT / 200;
         const coreMin = (M * M / 1000 + M * 0.9 * mastery) / 30 + INT / 200;
         // 마법사 크리: 크리 스킬 없음 → 크리 = 맥스 굴림 보장 (크확만큼 기댓값이 맥스로 당겨짐)
-        const crit = (st.sumCrit || 0) / 100;
+        const crit = Math.min(100, (st.sumCrit || 0) + (typeof sharpEffect === 'function' ? sharpEffect(opts, false).crit : 0)) / 100;
         const normalAvg = (coreMax + coreMin) / 2;
         const expCore = (1 - crit) * normalAvg + crit * coreMax;
         return {
@@ -1987,6 +1992,10 @@
         if (skInfo) skInfo.textContent = `BA ${dmg.BA} / 숙련 ${dmg.masteryPct}%`;
         const sharpInfoEl = document.getElementById('r-sharp-info');
         if (sharpInfoEl) sharpInfoEl.textContent = '';
+        document.getElementById('jeongchuk-atk').textContent = opts.jeongchukLv || 0;
+        document.getElementById('yeochuk-atk').textContent = opts.yeochukLv || 0;
+        const mwL = opts.mwLv;
+        document.getElementById('mw-info').textContent = mwL > 0 ? `INT +${st.mwBoostInt} / LUK +${Math.floor((opts.baseDex || 0) * Math.ceil(mwL / 2) / 100)}` : '없음';
 
         const cell = (label, val, unit = '', color = '', bg = 'bg-slate-50') => {
           const v = (val === 0 || val == null) ? '—' : `${val}${unit}`;
@@ -2034,7 +2043,8 @@
         if (js) js.value = currentJob;
         const tog = (id, hidden) => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', hidden); };
         tog('skill-section', mage);
-        tog('buff-section', mage);
+        tog('buff-section', false); // 버프는 공용 (정축/여축/메용/공버프 마법사도 적용)
+        setTxt('lbl-buff-atk', mage ? '마버프' : '공버프');
         tog('mage-skill-section', !mage);
         tog('disp-str-wrap', mage);
         tog('r-1hit-crit-box', mage);
