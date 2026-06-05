@@ -343,10 +343,10 @@
                 <span class="text-slate-700 w-12" id="lbl-buff-atk">공버프</span>
                 <select id="atk-buff" class="w-40 px-2 py-1 border border-slate-300 rounded text-xs">
                   <option value="none">없음</option>
-                  <option value="iyusik">이유식 (+7)</option>
-                  <option value="bunno">분노M (+10)</option>
-                  <option value="horntail">혼테일 (+30)</option>
-                  <option value="pinkbean">핑크빈 (+35)</option>
+                  <option value="iyusik" id="opt-buff-iyusik">이유식 (+7)</option>
+                  <option value="bunno" id="opt-buff-bunno">분노M (+10)</option>
+                  <option value="horntail" id="opt-buff-horntail">혼테일 (+30)</option>
+                  <option value="pinkbean" id="opt-buff-pinkbean">핑크빈 (+35)</option>
                 </select>
               </label>
               <div class="flex items-center gap-1.5">
@@ -379,6 +379,11 @@
                 <input type="number" id="yeochuk-lv" value="0" min="0" max="12" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
                 <button type="button" data-max-btn="yeochuk" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
                 <span class="text-[10px] text-slate-400">+<span id="yeochuk-atk">0</span></span>
+              </div>
+              <div class="flex items-center gap-1.5 hidden" id="medi-row">
+                <span class="text-slate-700 w-12">메디</span>
+                <input type="number" id="medi-mag" value="0" min="0" placeholder="0" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <span class="text-[10px] text-slate-400">마력 (메디테이션 버프 직접 입력)</span>
               </div>
             </div>
           </section>
@@ -1866,7 +1871,9 @@
         const mwBoostLuk = Math.floor((opts.baseDex || 0) * mwPct / 100);
         const totalInt = Math.floor((opts.baseLuk + sumInt) * (1 + (sumIntP + sumAllP) / 100)) + mwBoostInt;
         const totalLuk = Math.floor((opts.baseDex + sumLuk) * (1 + (sumLukP + sumAllP) / 100)) + mwBoostLuk;
-        const buffMag = summonAtkOf(opts) + (opts.jeongchukLv || 0) + (opts.yeochukLv || 0); // 공버프+정축+여축 = flat 마력
+        // 마법사 버프 마력: 정축/여축 = 물공×2, 공버프(이유식/분노 X · 혼테 40/핑크 45 = 공값+10), 메디테이션 직접입력
+        const MAGE_SUMMON = { none: 0, iyusik: 0, bunno: 0, horntail: 40, pinkbean: 45 };
+        const buffMag = ((opts.jeongchukLv || 0) + (opts.yeochukLv || 0)) * 2 + (MAGE_SUMMON[atkBuffOf(opts)] || 0) + (opts.mediMag || 0);
         const magic = Math.floor((totalInt + sumMag) * (1 + sumMagP / 100)) + buffMag;
         return { totalInt, totalLuk, magic, sumInt, sumIntP, sumLuk, sumLukP, sumAllP, sumMag, sumMagP, sumTotalDmg, sumBossDmg, sumCrit, buffMag, mwBoostInt };
       }
@@ -1928,6 +1935,7 @@
           mageSkillLv: +((document.getElementById('mage-skill-lv') || {}).value) || 0,
           mageAmpLv: +((document.getElementById('mage-amp-lv') || {}).value) || 0,
           mageElem: (() => { const v = parseFloat((document.getElementById('mage-elem') || {}).value); return isFinite(v) ? v : 1.0; })(),
+          mediMag: +((document.getElementById('medi-mag') || {}).value) || 0,
         };
       }
 
@@ -1948,7 +1956,7 @@
           critthrowLv: 'critthrow-lv', shadowLv: 'shadow-lv',
           mwLv: 'mw-lv',
           jeongchukLv: 'jeongchuk-lv', yeochukLv: 'yeochuk-lv',
-          mageSkill: 'mage-skill', mageSkillLv: 'mage-skill-lv', mageAmpLv: 'mage-amp-lv', mageElem: 'mage-elem',
+          mageSkill: 'mage-skill', mageSkillLv: 'mage-skill-lv', mageAmpLv: 'mage-amp-lv', mageElem: 'mage-elem', mediMag: 'medi-mag',
         };
         Object.entries(map).forEach(([k, id]) => {
           if (savedConfig[k] != null) document.getElementById(id).value = savedConfig[k];
@@ -1992,8 +2000,8 @@
         if (skInfo) skInfo.textContent = `BA ${dmg.BA} / 숙련 ${dmg.masteryPct}%`;
         const sharpInfoEl = document.getElementById('r-sharp-info');
         if (sharpInfoEl) sharpInfoEl.textContent = '';
-        document.getElementById('jeongchuk-atk').textContent = opts.jeongchukLv || 0;
-        document.getElementById('yeochuk-atk').textContent = opts.yeochukLv || 0;
+        document.getElementById('jeongchuk-atk').textContent = (opts.jeongchukLv || 0) * 2; // 마법사 정축 = 물공×2
+        document.getElementById('yeochuk-atk').textContent = (opts.yeochukLv || 0) * 2;
         const mwL = opts.mwLv;
         document.getElementById('mw-info').textContent = mwL > 0 ? `INT +${st.mwBoostInt} / LUK +${Math.floor((opts.baseDex || 0) * Math.ceil(mwL / 2) / 100)}` : '없음';
 
@@ -2045,6 +2053,14 @@
         tog('skill-section', mage);
         tog('buff-section', false); // 버프는 공용 (정축/여축/메용/공버프 마법사도 적용)
         setTxt('lbl-buff-atk', mage ? '마버프' : '공버프');
+        tog('medi-row', !mage); // 메디테이션은 마법사 전용
+        const setOpt = (id, hidden, text) => { const el = document.getElementById(id); if (el) { el.hidden = hidden; el.textContent = text; } };
+        setOpt('opt-buff-iyusik', mage, '이유식 (+7)');
+        setOpt('opt-buff-bunno', mage, '분노M (+10)');
+        setOpt('opt-buff-horntail', false, mage ? '혼테일 (+40)' : '혼테일 (+30)');
+        setOpt('opt-buff-pinkbean', false, mage ? '핑크빈 (+45)' : '핑크빈 (+35)');
+        const ab = document.getElementById('atk-buff');
+        if (mage && ab && (ab.value === 'iyusik' || ab.value === 'bunno')) ab.value = 'none';
         tog('mage-skill-section', !mage);
         tog('disp-str-wrap', mage);
         tog('r-1hit-crit-box', mage);
@@ -2087,7 +2103,7 @@
         renderLoadout();
         recalc();
       });
-      ['mage-skill', 'mage-skill-lv', 'mage-amp-lv', 'mage-elem'].forEach(id => {
+      ['mage-skill', 'mage-skill-lv', 'mage-amp-lv', 'mage-elem', 'medi-mag'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', recalc);
         if (el) el.addEventListener('change', recalc);
