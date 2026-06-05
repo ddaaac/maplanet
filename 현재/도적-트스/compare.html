@@ -147,7 +147,7 @@
                   <div id="summary-stat" class="grid grid-cols-4 gap-1.5"></div>
                 </div>
                 <div>
-                  <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1">공격력 <span class="text-orange-500">공%적용 (무기+장갑)</span> / <span class="text-slate-600">공%X (표창)</span></div>
+                  <div class="text-[10px] text-slate-400 uppercase tracking-wide mb-1" id="lbl-summary-atk-head">공격력 <span class="text-orange-500">공%적용 (무기+장갑)</span> / <span class="text-slate-600">공%X (표창)</span></div>
                   <div id="summary-atk" class="grid grid-cols-2 gap-1.5"></div>
                 </div>
                 <div>
@@ -489,7 +489,7 @@
               <label class="text-xs"><span class="text-slate-600">슬롯</span>
                 <select id="f-slot" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm">
                   <option value="무기" selected>무기</option>
-                  <option value="표창">표창</option>
+                  <option value="표창" id="opt-slot-throw">표창</option>
                   <option value="모자">모자</option>
                   <option value="상의">상의</option>
                   <option value="하의">하의</option>
@@ -803,12 +803,13 @@
       document.getElementById('f-weapon-only').classList.toggle('hidden', fSlot.value !== '무기');
 
       // 입력 스탯으로 기본 아이템 이름 생성 (예: 공8럭16덱6럭퍼9올퍼6)
-      const NAME_PARTS = [
-        ['atk','공'], ['luk','럭'], ['dex','덱'], ['allstat','올'],
-        ['atkp','공퍼'], ['lukp','럭퍼'], ['dexp','덱퍼'], ['allstatp','올퍼'],
-        ['bossdmg','보공'], ['critrate','크확'], ['totaldmg','총뎀'],
-      ];
       function defaultItemName(it) {
+        const mage = currentJob === '마법사';
+        const NAME_PARTS = [
+          ['atk', mage ? '마' : '공'], ['luk', mage ? '인' : '럭'], ['dex', mage ? '럭' : '덱'], ['allstat', '올'],
+          ['atkp', mage ? '마퍼' : '공퍼'], ['lukp', mage ? '인퍼' : '럭퍼'], ['dexp', mage ? '럭퍼' : '덱퍼'], ['allstatp', '올퍼'],
+          ['bossdmg', '보공'], ['critrate', '크확'], ['totaldmg', '총뎀'],
+        ];
         const parts = NAME_PARTS.filter(([k]) => (it[k] || 0) !== 0).map(([k, label]) => label + it[k]);
         return parts.length ? parts.join('') : '(이름 없음)';
       }
@@ -1001,6 +1002,7 @@
           rowDiv.className = 'grid gap-x-2';
           rowDiv.style.gridTemplateColumns = `repeat(${SLOT_COLS}, minmax(0, 1fr))`;
           row.forEach(slot => {
+            if (currentJob === '마법사' && slot === '표창') return; // 마법사는 표창 슬롯 없음
             const wrap = document.createElement('label');
             wrap.className = 'flex flex-col min-w-0';
             const cur = loadout[slot] || '';
@@ -1853,7 +1855,8 @@
           sumLuk += (it.dex || 0) + (it.allstat || 0);
           sumLukP += it.dexp || 0;
           sumAllP += it.allstatp || 0;
-          if (it.slot === '무기') { sumMag += it.atk || 0; sumMagP += it.atkp || 0; sumCrit += it.critrate || 0; }
+          sumMag += it.atk || 0; // 마력(깡)은 전 부위 합산 (귀걸이/목걸이 등)
+          if (it.slot === '무기') { sumMagP += it.atkp || 0; sumCrit += it.critrate || 0; } // 마력%/크확은 무기 잠재만
           sumTotalDmg += it.totaldmg || 0;
           sumBossDmg += it.bossdmg || 0;
         });
@@ -1935,6 +1938,7 @@
           critthrowLv: 'critthrow-lv', shadowLv: 'shadow-lv',
           mwLv: 'mw-lv',
           jeongchukLv: 'jeongchuk-lv', yeochukLv: 'yeochuk-lv',
+          mageSkill: 'mage-skill', mageSkillLv: 'mage-skill-lv', mageAmpLv: 'mage-amp-lv', mageElem: 'mage-elem',
         };
         Object.entries(map).forEach(([k, id]) => {
           if (savedConfig[k] != null) document.getElementById(id).value = savedConfig[k];
@@ -1990,7 +1994,7 @@
           cell('깡 LUK', st.sumLuk, '', 'text-purple-600') +
           cell('LUK%', st.sumLukP + st.sumAllP, '%', 'text-purple-600');
         document.getElementById('summary-atk').innerHTML =
-          cell('깡 마력 (무기)', st.sumMag, '', 'text-orange-600', 'bg-orange-50') +
+          cell('깡 마력', st.sumMag, '', 'text-orange-600', 'bg-orange-50') +
           cell('마력%', st.sumMagP, '%', 'text-orange-600');
         document.getElementById('summary-pot').innerHTML =
           cell('총뎀%', st.sumTotalDmg, '%', 'text-rose-600') +
@@ -2017,6 +2021,7 @@
 
         document.getElementById('reqdex-section').classList.add('hidden');
         document.querySelectorAll('.loadout-sel').forEach(sel => sel.classList.remove('border-rose-500', 'bg-rose-50', 'text-rose-700', 'font-semibold'));
+        saveConfig(); // 마법사 모드도 설정(레벨/스탯/스킬) 저장
       }
 
       function applyJobUI() {
@@ -2049,6 +2054,12 @@
         tog('lbl-f-critrate-wrap', false); // 마법사도 무기 크확 사용
         const reqL = document.getElementById('lbl-f-reqdex');
         if (reqL) reqL.innerHTML = mage ? '요구 INT <span class="text-slate-400">(마법사 미반영)</span>' : '요구 DEX <span class="text-slate-400">(부스탯 미달 시 비활성)</span>';
+        const atkHead = document.getElementById('lbl-summary-atk-head');
+        if (atkHead) atkHead.innerHTML = mage ? '마력 <span class="text-orange-500">(깡마력 전부위 / 마력% 무기)</span>' : '공격력 <span class="text-orange-500">공%적용 (무기+장갑)</span> / <span class="text-slate-600">공%X (표창)</span>';
+        const throwOpt = document.getElementById('opt-slot-throw');
+        if (throwOpt) throwOpt.hidden = mage; // 마법사는 표창 없음
+        const fSlotEl = document.getElementById('f-slot');
+        if (mage && fSlotEl && fSlotEl.value === '표창') fSlotEl.value = '무기';
       }
       document.getElementById('job-select').addEventListener('change', (e) => {
         currentJob = e.target.value;
