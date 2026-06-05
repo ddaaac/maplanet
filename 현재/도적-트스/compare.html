@@ -1312,9 +1312,9 @@
         sel.innerHTML = withSnap.map(c =>
           `<option value="${c.id}">${c.id === basePresetId ? '📌 ' : ''}${c.name || '(이름 없음)'}</option>`
         ).join('');
-        // 기준 프리셋을 기본 선택 (없으면 이전 선택 유지)
-        if (basePresetId && withSnap.some(c => c.id === basePresetId)) sel.value = basePresetId;
-        else if (prev && withSnap.some(c => c.id === prev)) sel.value = prev;
+        // 현재 선택 유지 우선 (장비/스탯 바꿔도 고른 프리셋 그대로 → 덮어쓰기 가능). 선택 없을 때만 기준(📌) 기본
+        if (prev && withSnap.some(c => c.id === prev)) sel.value = prev;
+        else if (basePresetId && withSnap.some(c => c.id === basePresetId)) sel.value = basePresetId;
       }
       // 드롭다운에서 프리셋 선택 시 바로 불러오기
       document.getElementById('calc-preset-sel').addEventListener('change', (e) => {
