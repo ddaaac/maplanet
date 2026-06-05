@@ -538,7 +538,7 @@
               <label class="text-xs"><span class="text-slate-600">올스탯%</span>
                 <input type="number" id="f-allstatp" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
               </label>
-              <label class="text-xs col-span-2"><span class="text-slate-600">요구 DEX <span class="text-slate-400">(부스탯 미달 시 비활성)</span></span>
+              <label class="text-xs col-span-2"><span class="text-slate-600" id="lbl-f-reqdex">요구 DEX <span class="text-slate-400">(부스탯 미달 시 비활성)</span></span>
                 <input type="number" id="f-reqdex" placeholder="0" class="w-full mt-1 px-2 py-1.5 border border-slate-300 rounded text-sm text-center">
               </label>
             </div>
@@ -959,20 +959,27 @@
         }));
       }
 
+      // 직업별 스탯 라벨 (도적: 럭/덱/공 · 마법사: 인/럭/마)
+      function jobLabels() {
+        return currentJob === '마법사'
+          ? { primary: 'INT', secondary: 'LUK', primaryP: 'INT%', secondaryP: 'LUK%', atk: '마력', atkp: '마력%', reqStat: '요구INT' }
+          : { primary: 'LUK', secondary: 'DEX', primaryP: 'LUK%', secondaryP: 'DEX%', atk: '공', atkp: '공%', reqStat: '요구DEX' };
+      }
       function itemSummary(it) {
         const parts = [];
-        if (it.luk) parts.push(`LUK ${it.luk}`);
-        if (it.dex) parts.push(`DEX ${it.dex}`);
+        const L = jobLabels();
+        if (it.luk) parts.push(`${L.primary} ${it.luk}`);
+        if (it.dex) parts.push(`${L.secondary} ${it.dex}`);
         if (it.allstat) parts.push(`올 ${it.allstat}`);
-        if (it.lukp) parts.push(`LUK% ${it.lukp}`);
-        if (it.dexp) parts.push(`DEX% ${it.dexp}`);
+        if (it.lukp) parts.push(`${L.primaryP} ${it.lukp}`);
+        if (it.dexp) parts.push(`${L.secondaryP} ${it.dexp}`);
         if (it.allstatp) parts.push(`올% ${it.allstatp}`);
-        if (it.atk) parts.push(`공 ${it.atk}`);
-        if (it.atkp) parts.push(`공% ${it.atkp}`);
+        if (it.atk) parts.push(`${L.atk} ${it.atk}`);
+        if (it.atkp) parts.push(`${L.atkp} ${it.atkp}`);
         if (it.totaldmg) parts.push(`총뎀% ${it.totaldmg}`);
         if (it.critrate) parts.push(`크확% ${it.critrate}`);
         if (it.bossdmg) parts.push(`보공% ${it.bossdmg}`);
-        if (it.reqDex) parts.push(`<span class="text-rose-600">요구DEX ${it.reqDex}</span>`);
+        if (it.reqDex) parts.push(`<span class="text-rose-600">${L.reqStat} ${it.reqDex}</span>`);
         if (it.price) parts.push(`<span class="text-emerald-600">${it.price}억</span>`);
         return parts.join(' / ') || '-';
       }
@@ -1839,21 +1846,21 @@
       function computeMageStats(equip, opts) {
         const active = equip.filter(Boolean);
         let sumInt = 0, sumIntP = 0, sumLuk = 0, sumLukP = 0, sumAllP = 0;
-        let sumMag = 0, sumMagP = 0, sumTotalDmg = 0, sumBossDmg = 0;
+        let sumMag = 0, sumMagP = 0, sumTotalDmg = 0, sumBossDmg = 0, sumCrit = 0;
         active.forEach(it => {
           sumInt += (it.luk || 0) + (it.allstat || 0);
           sumIntP += it.lukp || 0;
           sumLuk += (it.dex || 0) + (it.allstat || 0);
           sumLukP += it.dexp || 0;
           sumAllP += it.allstatp || 0;
-          if (it.slot === '무기') { sumMag += it.atk || 0; sumMagP += it.atkp || 0; }
+          if (it.slot === '무기') { sumMag += it.atk || 0; sumMagP += it.atkp || 0; sumCrit += it.critrate || 0; }
           sumTotalDmg += it.totaldmg || 0;
           sumBossDmg += it.bossdmg || 0;
         });
         const totalInt = Math.floor((opts.baseLuk + sumInt) * (1 + (sumIntP + sumAllP) / 100));
         const totalLuk = Math.floor((opts.baseDex + sumLuk) * (1 + (sumLukP + sumAllP) / 100));
         const magic = Math.floor((totalInt + sumMag) * (1 + sumMagP / 100));
-        return { totalInt, totalLuk, magic, sumInt, sumIntP, sumLuk, sumLukP, sumAllP, sumMag, sumMagP, sumTotalDmg, sumBossDmg };
+        return { totalInt, totalLuk, magic, sumInt, sumIntP, sumLuk, sumLukP, sumAllP, sumMag, sumMagP, sumTotalDmg, sumBossDmg, sumCrit };
       }
 
       function computeMageDamage(st, opts) {
@@ -1987,9 +1994,9 @@
           cell('마력%', st.sumMagP, '%', 'text-orange-600');
         document.getElementById('summary-pot').innerHTML =
           cell('총뎀%', st.sumTotalDmg, '%', 'text-rose-600') +
+          cell('크확%', st.sumCrit, '%', 'text-rose-600') +
           cell('보공%', st.sumBossDmg, '%', 'text-rose-600') +
-          cell('앰플총뎀', dmg.ampDmg, '%', 'text-violet-600') +
-          cell('합 총뎀', dmg.totalDmgSum, '%', 'text-rose-600');
+          cell('합총뎀', dmg.totalDmgSum, '%', 'text-rose-600');
 
         const cvList = document.getElementById('convert-list');
         if (cvList) cvList.innerHTML = '<p class="text-[10px] text-slate-400 py-2 text-center">마법사 환산 준비 중</p>';
@@ -2039,7 +2046,9 @@
         setTxt('lbl-f-dexp', mage ? 'LUK%' : 'DEX %');
         setTxt('lbl-f-atk', mage ? '마력' : '공격력');
         setTxt('lbl-f-atkp', mage ? '마력%' : '공%');
-        tog('lbl-f-critrate-wrap', mage);
+        tog('lbl-f-critrate-wrap', false); // 마법사도 무기 크확 사용
+        const reqL = document.getElementById('lbl-f-reqdex');
+        if (reqL) reqL.innerHTML = mage ? '요구 INT <span class="text-slate-400">(마법사 미반영)</span>' : '요구 DEX <span class="text-slate-400">(부스탯 미달 시 비활성)</span>';
       }
       document.getElementById('job-select').addEventListener('change', (e) => {
         currentJob = e.target.value;
