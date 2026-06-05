@@ -50,7 +50,8 @@
 
     <main class="max-w-7xl mx-auto p-4 sm:p-6">
       <!-- ===================== 세팅 탭 ===================== -->
-      <div data-panel="calc" class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
+      <div data-panel="calc" class="space-y-4">
+       <div class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
         <div class="space-y-3">
           <!-- 프리셋 불러오기 / 기준 갱신 -->
           <section class="bg-white rounded-lg border border-slate-200 px-3 py-2">
@@ -58,7 +59,7 @@
               <span class="text-xs font-semibold text-slate-600 whitespace-nowrap flex items-center gap-1">
                 <span class="inline-block w-1 h-3 bg-orange-500 rounded"></span>프리셋
               </span>
-              <select id="calc-preset-sel" class="w-28 min-w-0 px-2 py-1 border border-slate-300 rounded text-xs"></select>
+              <select id="calc-preset-sel" class="flex-1 min-w-[12rem] px-2 py-1.5 border border-slate-300 rounded text-xs"></select>
               <button type="button" id="calc-update-preset" class="text-xs px-2 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 whitespace-nowrap">덮어쓰기</button>
               <button type="button" id="calc-add-preset" class="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap">새 프리셋으로 추가</button>
               <button type="button" id="calc-rebase" class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 whitespace-nowrap">기준 갱신</button>
@@ -74,22 +75,22 @@
               </label>
               <label class="text-xs">
                 <span class="text-slate-500">레벨</span>
-                <input type="number" id="char-level" value="135" min="1" max="200"
+                <input type="number" id="char-level" value="10" min="1" max="200"
                   class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
               </label>
               <label class="text-xs">
                 <span class="text-slate-500">순수 LUK</span>
-                <input type="number" id="base-luk" value="578"
+                <input type="number" id="base-luk" value="58"
                   class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
               </label>
               <label class="text-xs">
                 <span class="text-slate-500">순수 DEX</span>
-                <input type="number" id="base-dex" value="69"
+                <input type="number" id="base-dex" value="4"
                   class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
               </label>
               <label class="text-xs">
                 <span class="text-slate-500">표기 STR</span>
-                <input type="number" id="disp-str" value="12"
+                <input type="number" id="disp-str" value="0"
                   class="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-sm font-mono">
               </label>
             </div>
@@ -97,7 +98,10 @@
 
           <!-- 현재 장비 -->
           <section class="bg-white rounded-lg border border-slate-200 p-3">
-            <h2 class="font-semibold text-sm mb-2">현재 장비</h2>
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="font-semibold text-sm">현재 장비</h2>
+              <button type="button" id="goto-items" class="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 whitespace-nowrap">+ 아이템 만들기</button>
+            </div>
             <div id="loadout-grid" class="space-y-1.5"></div>
           </section>
 
@@ -112,19 +116,6 @@
             <div id="reqdex-content" class="space-y-2 text-xs"></div>
           </section>
 
-          <!-- 스탯 환산 -->
-          <section class="bg-white rounded-lg border border-slate-200 p-3">
-            <div class="flex items-center justify-between mb-1.5">
-              <h2 class="font-semibold text-sm flex items-center gap-2">
-                <span class="inline-block w-1 h-3 bg-violet-500 rounded"></span>
-                스탯 환산
-              </h2>
-              <div class="text-[10px] text-slate-500">
-                현재 LUK <strong id="cv-luk" class="text-slate-800 font-mono">0</strong>
-              </div>
-            </div>
-            <div id="convert-list" class="space-y-1 mt-1"></div>
-          </section>
         </div>
 
         <!-- Right: 결과 + 옵션 -->
@@ -224,18 +215,26 @@
               <div class="flex items-center gap-1.5">
                 <span class="text-slate-700 font-semibold w-16">공격</span>
                 <select id="atk-skill" class="flex-1 min-w-0 px-1.5 py-0.5 border border-slate-300 rounded text-xs">
+                  <option value="basic">기본 공격</option>
                   <option value="trs">트리플 스로우</option>
                   <option value="ls">럭키 세븐</option>
                 </select>
-                <span class="text-slate-500">Lv</span>
-                <input type="number" id="atk-lv" value="30" min="1" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
-                <button type="button" data-max-btn="atk" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                <span id="atk-lv-wrap" class="flex items-center gap-1.5 hidden">
+                  <span class="text-slate-500">Lv</span>
+                  <input type="number" id="atk-lv" value="0" min="0" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                  <button type="button" data-max-btn="atk" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                </span>
+                <span id="mastery-wrap" class="flex items-center gap-1.5">
+                  <span class="text-slate-500">마스터리</span>
+                  <input type="number" id="mastery-lv" value="0" min="0" max="20" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                  <button type="button" data-max-btn="mastery" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                </span>
               </div>
 
               <div class="flex items-center gap-1.5">
                 <span class="text-slate-700 w-16">크리스로우</span>
                 <span class="text-slate-500">Lv</span>
-                <input type="number" id="critthrow-lv" value="30" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <input type="number" id="critthrow-lv" value="0" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
                 <button type="button" data-max-btn="critthrow" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
                 <span class="text-[10px] text-slate-400" id="critthrow-info">—</span>
               </div>
@@ -243,7 +242,7 @@
               <div class="flex items-center gap-1.5">
                 <span class="text-slate-700 w-16">쉐파</span>
                 <span class="text-slate-500">Lv</span>
-                <input type="number" id="shadow-lv" value="30" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <input type="number" id="shadow-lv" value="0" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
                 <button type="button" data-max-btn="shadow" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
               </div>
             </div>
@@ -262,7 +261,7 @@
                   <option value="none">없음</option>
                   <option value="iyusik">이유식 (+7)</option>
                   <option value="bunno">분노M (+10)</option>
-                  <option value="horntail" selected>혼테일 (+30)</option>
+                  <option value="horntail">혼테일 (+30)</option>
                   <option value="pinkbean">핑크빈 (+35)</option>
                 </select>
               </label>
@@ -275,6 +274,13 @@
                   <input type="checkbox" id="sharp-usable"> 쓸샾
                 </label>
                 <span class="text-[10px] text-slate-400" id="sharp-info"></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-700 w-12">메용</span>
+                <span class="text-slate-500">Lv</span>
+                <input type="number" id="mw-lv" value="0" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
+                <button type="button" data-max-btn="mw" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
+                <span class="text-[10px] text-slate-400" id="mw-info">없음</span>
               </div>
               <div class="flex items-center gap-1.5">
                 <span class="text-slate-700 w-12">정축</span>
@@ -290,13 +296,6 @@
                 <button type="button" data-max-btn="yeochuk" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
                 <span class="text-[10px] text-slate-400">+<span id="yeochuk-atk">0</span></span>
               </div>
-              <div class="flex items-center gap-1.5">
-                <span class="text-slate-700 w-12">메용</span>
-                <span class="text-slate-500">Lv</span>
-                <input type="number" id="mw-lv" value="0" min="0" max="30" class="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center font-mono">
-                <button type="button" data-max-btn="mw" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">MAX</button>
-                <span class="text-[10px] text-slate-400" id="mw-info">없음</span>
-              </div>
             </div>
           </section>
 
@@ -310,7 +309,7 @@
             <div class="grid grid-cols-3 gap-1.5 mb-2">
               <label class="text-[10px]">
                 <span class="text-slate-500">몹 HP</span>
-                <input type="number" id="mob-hp" value="80000" min="0" step="1000"
+                <input type="number" id="mob-hp" value="0" min="0" step="1000"
                   class="w-full mt-0.5 px-1.5 py-1 border border-slate-300 rounded text-xs font-mono">
               </label>
               <label class="text-[10px]">
@@ -320,11 +319,30 @@
               </label>
               <label class="text-[10px]">
                 <span class="text-slate-500">몹 Lv</span>
-                <input type="number" id="mob-lv" value="135" min="1" max="250"
+                <input type="number" id="mob-lv" value="0" min="0" max="250"
                   class="w-full mt-0.5 px-1.5 py-1 border border-slate-300 rounded text-xs font-mono">
               </label>
             </div>
             <div id="ncut-result" class="text-xs space-y-1.5"></div>
+          </section>
+
+        </aside>
+       </div>
+
+       <!-- 스탯 환산 / 총 스탯 통계 (한 줄, 좁으면 두 줄) -->
+       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- 스탯 환산 -->
+          <section class="bg-white rounded-lg border border-slate-200 p-3">
+            <div class="flex items-center justify-between mb-1.5">
+              <h2 class="font-semibold text-sm flex items-center gap-2">
+                <span class="inline-block w-1 h-3 bg-violet-500 rounded"></span>
+                스탯 환산
+              </h2>
+              <div class="text-[10px] text-slate-500">
+                현재 LUK <strong id="cv-luk" class="text-slate-800 font-mono">0</strong>
+              </div>
+            </div>
+            <div id="convert-list" class="space-y-1 mt-1"></div>
           </section>
 
           <!-- 총 스탯 통계 -->
@@ -348,7 +366,7 @@
               </div>
             </div>
           </section>
-        </aside>
+       </div>
       </div>
 
       <!-- ===================== 비교 탭 ===================== -->
@@ -387,7 +405,7 @@
             </h2>
             <div class="grid grid-cols-2 gap-2 text-xs">
               <label>
-                <span class="text-slate-600">20북 <span class="text-slate-400">(10→20, 70%)</span></span>
+                <span class="text-slate-600">트리플 스로우 20 <span class="text-slate-400">(10→20, 70%)</span></span>
                 <div class="flex items-center gap-1 mt-1">
                   <input type="number" id="book20-price" placeholder="0" min="0" step="0.1" class="w-full px-2 py-1 border border-slate-300 rounded text-sm text-center font-mono">
                   <span class="text-slate-400 text-[10px]">억</span>
@@ -395,7 +413,7 @@
                 <div class="text-[9px] text-slate-400 mt-0.5">기대 <span id="book20-exp" class="font-mono">0</span>억</div>
               </label>
               <label>
-                <span class="text-slate-600">30북 <span class="text-slate-400">(20→30, 50%)</span></span>
+                <span class="text-slate-600">트리플 스로우 30 <span class="text-slate-400">(20→30, 50%)</span></span>
                 <div class="flex items-center gap-1 mt-1">
                   <input type="number" id="book30-price" placeholder="0" min="0" step="0.1" class="w-full px-2 py-1 border border-slate-300 rounded text-sm text-center font-mono">
                   <span class="text-slate-400 text-[10px]">억</span>
@@ -596,17 +614,9 @@
       function seedDefaults() {
         const mkId = () => String(Date.now()) + Math.random().toString(16).slice(2, 8);
         const seeds = [
-          { slot: '무기',   name: '아대',      atk: 87, luk: 11, atkp: 9 },
-          { slot: '표창',   name: '뇌전수리검+25', atk: 25 },
-          { slot: '모자',   name: '12%모자',  luk: 24, dex: 11, lukp: 12, dexp: 4 },
-          { slot: '상의',   name: '15%상의',  luk: 18, dex: 3,  lukp: 15 },
-          { slot: '하의',   name: '6%하의',   luk: 20, dex: 9,  lukp: 6 },
-          { slot: '신발',   name: '15%신발',  luk: 2,  dex: 14, lukp: 15 },
-          { slot: '장갑',   name: '9%장갑',   luk: 16, dex: 6,  lukp: 9, allstatp: 6, atk: 8 },
-          { slot: '귀고리', name: '21%귀고리', luk: 0,  dex: 5,  lukp: 21 },
-          { slot: '망토',   name: '21%망토',   luk: 0,  dex: 6,  lukp: 21 },
-          { slot: '목걸이', name: '인두',      luk: 10, lukp: 4, allstatp: 2 },
-          { slot: '훈장',   name: '마스터훈장', luk: 2,  dex: 2 },
+          { slot: '훈장',   name: '마스터 모험가',      allstat: 2 },
+          { slot: '훈장',   name: '버섯왕국의 수호자',  allstat: 2 },
+          { slot: '훈장',   name: '베테랑 모험가',      allstat: 1 },
         ];
         items = seeds.map(s => ({
           id: mkId(),
@@ -624,9 +634,8 @@
           sseulshap: false,
           price: s.price || 0,
         }));
-        // 자동 장착: 슬롯에 단 하나뿐인 아이템 자동 셋팅
+        // 기본은 아무것도 장착 안 함 (사용자가 직접 선택)
         loadout = {};
-        items.forEach(it => { loadout[it.slot] = it.id; });
         save();
       }
       if (items.length === 0) seedDefaults();
@@ -652,6 +661,10 @@
             p.classList.toggle('hidden', p.dataset.panel !== target);
           });
         });
+      });
+      // "아이템 만들기" → 아이템 관리 탭으로 이동
+      document.getElementById('goto-items').addEventListener('click', () => {
+        document.querySelector('.tab-btn[data-tab="items"]').click();
       });
 
       // ============== 아이템 폼 ==============
@@ -1258,7 +1271,7 @@
         const map = {
           level: 'char-level', baseLuk: 'base-luk', baseDex: 'base-dex',
           dispStr: 'disp-str',
-          atkSkill: 'atk-skill', atkLv: 'atk-lv',
+          atkSkill: 'atk-skill', atkLv: 'atk-lv', masteryLv: 'mastery-lv',
           critthrowLv: 'critthrow-lv', shadowLv: 'shadow-lv',
           mwLv: 'mw-lv',
           jeongchukLv: 'jeongchuk-lv', yeochukLv: 'yeochuk-lv',
@@ -1267,6 +1280,7 @@
         Object.entries(map).forEach(([k, id]) => {
           if (s[k] != null) document.getElementById(id).value = s[k];
         });
+        syncAtkSkillUI();
         setSharpUI(s);
         document.getElementById('atk-buff').value = atkBuffOf(s);
         if (s.boss != null) document.getElementById('boss-mode').checked = s.boss;
@@ -1306,7 +1320,7 @@
       });
 
       // 기준 갱신(리베이스): 현재 셋업을 새 기준으로, 다른 프리셋은 (옛 기준 대비) 변경분만 유지하고 새 기준 위에 재적용
-      const REBASE_OPTS_KEYS = ['level','baseLuk','baseDex','dispStr','sharpLv','usableSharp','atkBuff','boss','atkSkill','atkLv','critthrowLv','shadowLv','mwLv','jeongchukLv','yeochukLv','book20Price','book30Price','resetPrice'];
+      const REBASE_OPTS_KEYS = ['level','baseLuk','baseDex','dispStr','sharpLv','usableSharp','atkBuff','boss','atkSkill','atkLv','masteryLv','critthrowLv','shadowLv','mwLv','jeongchukLv','yeochukLv','book20Price','book30Price','resetPrice'];
       function rebaseToCurrentSetup() {
         if (!basePresetId) { alert('기준 프리셋을 먼저 지정하세요. (비교 탭에서 프리셋의 📌 기준 지정)'); return; }
         const basePreset = compares.find(c => c.id === basePresetId);
@@ -1491,6 +1505,8 @@
 
       // ============== 스킬 레벨별 데이터 (옛메 나이트로드 기준) ==============
       const SKILL_DATA = {
+        // 기본 공격 (표창 일반공격): 스킬데미지% 없음(100%), 1타. 데미지식은 computeAttackDamage 에서 분기.
+        basic: { maxLv: 0, hits: 1 },
         // 럭키 세븐: 데미지 % per hit (× 2타)
         ls: { maxLv: 20, hits: 2, dmg: [
           0, 58, 62, 66, 70, 76, 80, 84, 90, 94, 100,
@@ -1593,11 +1609,23 @@
         const WA = statsObj.wa;
         const atkSkill = opts.atkSkill || 'trs';
         const atkLv = opts.atkLv || 0;
-        const sData = SKILL_DATA[atkSkill];
-        const skillDmgPct = sData.dmg[atkLv] || 0;
-        const hits = sData.hits;
-        const statMax = LUK * 5    * WA / 100;
-        const statMin = LUK * 2.5  * WA / 100;
+        let skillDmgPct, hits, statMax, statMin;
+        if (atkSkill === 'basic') {
+          // 기본 공격(표창 일반): MAX = (LUK×3.6 + DEX) × WA / 100, MIN = MAX × 자벨린마스터리%
+          // 스킬데미지% 없음(=100%), 1타. (Nise's Formula)
+          const DEX = statsObj.totalDex;
+          const masteryPct = SKILL_DATA.mastery.pct(opts.masteryLv || 0);
+          statMax = (LUK * 3.6 + DEX) * WA / 100;
+          statMin = statMax * (masteryPct / 100);
+          skillDmgPct = 100;
+          hits = 1;
+        } else {
+          const sData = SKILL_DATA[atkSkill];
+          skillDmgPct = sData.dmg[atkLv] || 0;
+          hits = sData.hits;
+          statMax = LUK * 5    * WA / 100;
+          statMin = LUK * 2.5  * WA / 100;
+        }
         const perHitMax = statMax * (skillDmgPct / 100);
         const perHitMin = statMin * (skillDmgPct / 100);
 
@@ -1743,7 +1771,7 @@
 
       function readOpts() {
         return {
-          level: +document.getElementById('char-level').value || 135,
+          level: +document.getElementById('char-level').value || 10,
           baseLuk: +document.getElementById('base-luk').value || 0,
           baseDex: +document.getElementById('base-dex').value || 0,
           dispStr: +document.getElementById('disp-str').value || 0,
@@ -1755,6 +1783,7 @@
           boss: document.getElementById('boss-mode').checked,
           atkSkill: document.getElementById('atk-skill').value,
           atkLv: +document.getElementById('atk-lv').value || 0,
+          masteryLv: +document.getElementById('mastery-lv').value || 0,
           critthrowLv: +document.getElementById('critthrow-lv').value || 0,
           shadowLv: +document.getElementById('shadow-lv').value || 0,
           mwLv: +document.getElementById('mw-lv').value || 0,
@@ -1780,7 +1809,7 @@
         const map = {
           level: 'char-level', baseLuk: 'base-luk', baseDex: 'base-dex',
           dispStr: 'disp-str',
-          atkSkill: 'atk-skill', atkLv: 'atk-lv',
+          atkSkill: 'atk-skill', atkLv: 'atk-lv', masteryLv: 'mastery-lv',
           critthrowLv: 'critthrow-lv', shadowLv: 'shadow-lv',
           mwLv: 'mw-lv',
           jeongchukLv: 'jeongchuk-lv', yeochukLv: 'yeochuk-lv',
@@ -1798,7 +1827,14 @@
         if (savedConfig.mobWdef != null) document.getElementById('mob-wdef').value = savedConfig.mobWdef;
         if (savedConfig.mobLv != null) document.getElementById('mob-lv').value = savedConfig.mobLv;
       }
+      // 공격 스킬에 따라 Lv 칸 / 마스터리 칸 토글 (기본공격 → 마스터리, 트스/럭세 → Lv)
+      function syncAtkSkillUI() {
+        const basic = document.getElementById('atk-skill').value === 'basic';
+        document.getElementById('atk-lv-wrap').classList.toggle('hidden', basic);
+        document.getElementById('mastery-wrap').classList.toggle('hidden', !basic);
+      }
       applySavedConfig();
+      syncAtkSkillUI();
       renderSharpControl();
 
       function recalc() {
@@ -2298,7 +2334,7 @@
         recalc();
       }));
       renderSortButtons();
-      ['atk-lv','critthrow-lv','shadow-lv','mw-lv','sharp-lv','jeongchuk-lv','yeochuk-lv','book20-price','book30-price','reset-price','mob-hp','mob-wdef','mob-lv'].forEach(id => {
+      ['atk-lv','mastery-lv','critthrow-lv','shadow-lv','mw-lv','sharp-lv','jeongchuk-lv','yeochuk-lv','book20-price','book30-price','reset-price','mob-hp','mob-wdef','mob-lv'].forEach(id => {
         document.getElementById(id).addEventListener('input', recalc);
       });
       ['atk-skill','atk-buff'].forEach(id => document.getElementById(id).addEventListener('change', recalc));
@@ -2316,7 +2352,8 @@
 
       // MAX 버튼들 — 각 스킬 max level 채워줌
       const MAX_BTN_MAP = {
-        atk: { input: 'atk-lv', max: () => SKILL_DATA[document.getElementById('atk-skill').value].maxLv },
+        atk: { input: 'atk-lv', max: () => SKILL_DATA[document.getElementById('atk-skill').value].maxLv || 0 },
+        mastery:   { input: 'mastery-lv',   max: () => SKILL_DATA.mastery.maxLv },
         critthrow: { input: 'critthrow-lv', max: () => SKILL_DATA.critthrow.maxLv },
         shadow:    { input: 'shadow-lv',    max: () => SKILL_DATA.shadow.maxLv },
         mw:        { input: 'mw-lv',        max: () => 30 },
@@ -2336,7 +2373,8 @@
       });
       // 공격 스킬 바뀔 때 max 값 자동 cap
       document.getElementById('atk-skill').addEventListener('change', () => {
-        const max = SKILL_DATA[document.getElementById('atk-skill').value].maxLv;
+        syncAtkSkillUI();
+        const max = SKILL_DATA[document.getElementById('atk-skill').value].maxLv || 0;
         const el = document.getElementById('atk-lv');
         el.max = max;
         if (+el.value > max) el.value = max;
@@ -2350,7 +2388,7 @@
           baseLuk: +document.getElementById('base-luk').value || 0,
           baseDex: +document.getElementById('base-dex').value || 0,
           dispStr: +document.getElementById('disp-str').value || 0,
-          level: +document.getElementById('char-level').value || 135,
+          level: +document.getElementById('char-level').value || 10,
         };
         localStorage.setItem(STORAGE_KEYS.userDefault, JSON.stringify(snapshot));
         alert('현재 상태를 기본값으로 저장. 데이터 리셋 시 이 상태로 복원됨.');
